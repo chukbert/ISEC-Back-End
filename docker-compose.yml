@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  mongodb:
+    env_file: .env
+    image: mongo:4.2.3
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_USERNAME: ${MONGO_INITDB_USERNAME}
+      MONGO_INITDB_PASSWORD: ${MONGO_INITDB_PASSWORD}
+    ports:
+      - 27017:27017
+    volumes:
+      - ./db/init.sh:/docker-entrypoint-initdb.d/init.sh
+    networks:
+      - local_ISEC
+
+  server:
+    env_file: .env
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: server
+    depends_on:
+      - mongodb
+    environment:
+      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@localhost:27017/${MONGO_INITDB_DATABASE}
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${NODE_PORT}
+      # JWTSECRET: ${JWTSECRET}
+      # SALTROUNDS: ${SALTROUNDS}
+    ports:
+      - "5000:5000"
+    volumes:
+      - '.:/server'
+      - '/server/node_modules'
+    networks:
+      - local_ISEC
+
+networks:
+  local_ISEC:
