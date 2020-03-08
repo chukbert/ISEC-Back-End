@@ -28,11 +28,14 @@ services:
     depends_on:
       - mongodb
     environment:
-      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@localhost:27017/${MONGO_INITDB_DATABASE}
+      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}
       NODE_ENV: ${NODE_ENV}
       PORT: ${NODE_PORT}
-      # JWTSECRET: ${JWTSECRET}
-      # SALTROUNDS: ${SALTROUNDS}
+      JWTSECRET: ${JWTSECRET}
+      SALTROUNDS: ${SALTROUNDS}
+      WAIT_HOSTS: mongodb:27017
+      WAIT_BEFORE_HOSTS: 10
+    command: sh -c "/wait && yarn initdb && yarn live"
     ports:
       - "5000:5000"
     volumes:
