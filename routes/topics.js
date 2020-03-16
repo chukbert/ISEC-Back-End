@@ -28,7 +28,7 @@ router.post('/new', (req, res) => {
 
   new db.Topic({ name }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
-
+    
     res.json({ success: true, id: saved.id });
   });
 });
@@ -43,7 +43,7 @@ router.patch('/edit/:id', (req, res) => {
 });
 
 router.delete('/delete/:id', (req, res) => {
-  db.Topic.deleteOne({ id: req.params.id }).exec().then(
+  db.Topic.deleteOne({ id: req.params.id }).lean().exec().then(
     () => {
       res.json({ success: true });
     },
