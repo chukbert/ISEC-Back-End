@@ -75,38 +75,16 @@ const EnrollProgramSchema = new mongoose.Schema({
   courses: [ListCourseProgramSchema],
 });
 
-StudentSchema.pre('save', function (next) {
+StudentSchema.pre('save', (next) => {
   if (!this.isModified('password')) {
     return next();
   }
-  bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
-    this.password = hashed;
-    return next();
-  });
-});
-StudentSchema.methods.comparePassword = function (candidatePassword, callback) {
-  bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
-    if (err) {
-      return callback(err);
-    }
-    return callback(null, ismatch);
-  });
-};
-StudentSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
-  return token;
-};
-
-AdminSchema.pre('save', function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
+  return bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
     this.password = hashed;
     next();
   });
 });
-AdminSchema.methods.comparePassword = function (candidatePassword, callback) {
+StudentSchema.methods.comparePassword = (candidatePassword, callback) => {
   bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
     if (err) {
       return callback(err);
@@ -114,21 +92,21 @@ AdminSchema.methods.comparePassword = function (candidatePassword, callback) {
     return callback(null, ismatch);
   });
 };
-AdminSchema.methods.generateAuthToken = function () {
+StudentSchema.methods.generateAuthToken = () => {
   const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
   return token;
 };
 
-TeacherSchema.pre('save', function (next) {
+AdminSchema.pre('save', (next) => {
   if (!this.isModified('password')) {
     return next();
   }
-  bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
+  return bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
     this.password = hashed;
     next();
   });
 });
-TeacherSchema.methods.comparePassword = function (candidatePassword, callback) {
+AdminSchema.methods.comparePassword = (candidatePassword, callback) => {
   bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
     if (err) {
       return callback(err);
@@ -136,7 +114,29 @@ TeacherSchema.methods.comparePassword = function (candidatePassword, callback) {
     return callback(null, ismatch);
   });
 };
-TeacherSchema.methods.generateAuthToken = function () {
+AdminSchema.methods.generateAuthToken = () => {
+  const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
+  return token;
+};
+
+TeacherSchema.pre('save', (next) => {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  return bcrypt.hash(this.password, Number(process.env.SALTROUNDS)).then((hashed) => {
+    this.password = hashed;
+    next();
+  });
+});
+TeacherSchema.methods.comparePassword = (candidatePassword, callback) => {
+  bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, ismatch);
+  });
+};
+TeacherSchema.methods.generateAuthToken = () => {
   const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
   return token;
 };
