@@ -7,9 +7,7 @@ const {
 
 async function initialize() {
   await mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
-    .catch((error) => {
-      throw new Error(error);
-    });
+    .catch();
 
   const topic1 = await new Topic({
     name: 'Inheritance',
@@ -58,7 +56,6 @@ async function initialize() {
     password: 'teacher1',
     programs: [{ program_id: program1.id, course_id: [course1.id, course2.id] }],
   }).save((err, savedTest) => {
-    if (err) { throw new Error(err); }
     Program.update(
       { _id: program1.id },
       { $push: { list_teacher: savedTest.id } },
@@ -72,7 +69,6 @@ async function initialize() {
     password: 'teacher2',
     programs: [{ program_id: program1.id, course_id: [course1.id] }],
   }).save((err, savedTest) => {
-    if (err) { throw new Error(err); }
     Program.update(
       { _id: program1.id },
       { $push: { list_teacher: savedTest.id } },
@@ -108,7 +104,6 @@ async function initialize() {
       }],
     }],
   }).save((err, savedTest) => {
-    if (err) { throw new Error(err); }
     Student.update(
       { _id: student1.id },
       { $push: { enrollprogram_id: savedTest.id } },

@@ -6,7 +6,7 @@ const db = require('../db/models');
 
 
 router.get('/', (req, res) => {
-  db.Topic.find().lean().exec()
+  db.Course.find().lean().exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  db.Topic.findById(req.params.id).lean().exec()
+  db.Course.findOne({ _id :req.params.id }).populate('list_topic').lean().exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -24,9 +24,8 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/new', (req, res) => {
-  const { name } = req.body;
-
-  new db.Topic({ name }).save((err, saved) => {
+  
+  new db.Course({ list_topic : req.body.list_topic,  name : req.body.name,  code : req.body.code , description : req.body.description }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
     
     res.json({ success: true, id: saved.id });
@@ -34,12 +33,15 @@ router.post('/new', (req, res) => {
 });
 
 router.patch('/edit/:id', (req, res) => {
-  const { name } = req.body;
   const { id } = req.params;
-  db.Topic.updateOne({ _id: id }, { name }, (err) => {
-    if (err) { res.json({ success: false, error: err }); return; }
+  db.Course.updateOne({ id: id, 
+    name: req.body.name, 
+    code: req.body.code, 
+    description: req.body.description, 
+    list_topic: req.body.list_topic  }, (err) => {
+      if (err) { res.json({ success: false, error: err }); return; }
 
-    res.json({ success: true });
+      res.json({ success: true });
   });
 });
 
