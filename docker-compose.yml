@@ -16,6 +16,8 @@ services:
       - 27017:27017
     volumes:
       - ./db/init.sh:/docker-entrypoint-initdb.d/init.sh
+      # production
+      # - ./mongo-volume:/data/db
     networks:
       - local_ISEC
 
