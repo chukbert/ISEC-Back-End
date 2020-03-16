@@ -35,7 +35,8 @@ router.post('/new', (req, res) => {
 
 router.patch('/edit/:id', (req, res) => {
   const { name } = req.body;
-  db.DocsIndex.updateOne({ id: req.params.id }, { name }, (err) => {
+  const { id } = req.params;
+  db.Topic.updateOne({ _id: id }, { name }, (err) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true });
@@ -43,7 +44,8 @@ router.patch('/edit/:id', (req, res) => {
 });
 
 router.delete('/delete/:id', (req, res) => {
-  db.Topic.deleteOne({ id: req.params.id }).exec().then(
+  const { id } = req.params;
+  db.Topic.deleteOne({ _id: id }).exec().then(
     () => {
       res.json({ success: true });
     },

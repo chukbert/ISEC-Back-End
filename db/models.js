@@ -1,3 +1,4 @@
+/* eslint-disable func-names */
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -75,7 +76,7 @@ const EnrollProgramSchema = new mongoose.Schema({
   courses: [ListCourseProgramSchema],
 });
 
-StudentSchema.pre('save', (next) => {
+StudentSchema.pre('save', function (next) {
   if (!this.isModified('password')) {
     return next();
   }
@@ -97,7 +98,7 @@ StudentSchema.methods.generateAuthToken = () => {
   return token;
 };
 
-AdminSchema.pre('save', (next) => {
+AdminSchema.pre('save', function (next) {
   if (!this.isModified('password')) {
     return next();
   }
@@ -119,7 +120,7 @@ AdminSchema.methods.generateAuthToken = () => {
   return token;
 };
 
-TeacherSchema.pre('save', (next) => {
+TeacherSchema.pre('save', function (next) {
   if (!this.isModified('password')) {
     return next();
   }
