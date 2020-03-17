@@ -47,7 +47,7 @@ router.patch('/edit/:id', (req, res) => {
 
 router.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
-  db.Topic.deleteOne({ _id: id }).exec().then(
+  db.Course.deleteOne({ _id: id }).exec().then(
     () => {
       res.json({ success: true });
     },
