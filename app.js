@@ -3,6 +3,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const nocache = require('nocache');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
@@ -12,6 +13,8 @@ const coursesRouter = require('./routes/courses');
 
 const app = express();
 
+app.set('etag', false);
+app.use(nocache());
 app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
