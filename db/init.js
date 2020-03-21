@@ -49,7 +49,7 @@ async function initialize() {
   }).save();
 
 
-  const teacher1 = await new Teacher({
+  await new Teacher({
     username: 'teacher1',
     email: 'teacher1@example.com',
     role: 1,
