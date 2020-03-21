@@ -10,9 +10,9 @@ stages:
 
 # Cache downloaded dependencies and plugins between builds.
 # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-cache:
-  paths:
-    - node_modules
+# cache:
+#   paths:
+#     - node_modules
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
@@ -33,10 +33,11 @@ deploy:
   only:
     - master
   stage: deploy
+  before_script:
+    - 'which ssh-agent || (sudo apt-get update -y && sudo apt-get install -y openssh-client)'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo $GIT_SSH_PRIV_KEY | base64 -d)
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - cd /home/ec2-user/isec-backend
-    - git fetch origin master
-    - git reset --hard origin/master
-    - docker-compose down
-    - docker-comopse up --build
-    - docker system prune --volumes --force
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && git fetch origin master && git reset --hard origin master && docker-compose down && docker-compose up --build -d && docker system prune --volumes --force"
