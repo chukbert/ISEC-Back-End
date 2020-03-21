@@ -38,7 +38,7 @@ async function initialize() {
   const program1 = await new Program({
     name: 'Teknik Informatika',
     description: 'lorem ipsum dono?',
-    list_teacher: [],
+    list_teacher: [teacher1.id],
     list_course: [{
       course_id: course1.id,
       prerequisite: [],
@@ -49,7 +49,7 @@ async function initialize() {
   }).save();
 
 
-  await new Teacher({
+  const teacher1 = await new Teacher({
     username: 'teacher1',
     email: 'teacher1@example.com',
     role: 1,
