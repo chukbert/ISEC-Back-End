@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  db.Course.findOne({ _id :req.params.id }).populate('list_topic').lean().exec()
+  db.Course.findOne({ _id: req.params.id }).populate('list_topic').lean().exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -24,24 +24,30 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/new', (req, res) => {
-  
-  new db.Course({ list_topic : req.body.list_topic,  name : req.body.name,  code : req.body.code , description : req.body.description }).save((err, saved) => {
+  new db.Course({
+    list_topic: req.body.list_topic,
+    name: req.body.name,
+    code: req.body.code,
+    description: req.body.description,
+  }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
-    
+
     res.json({ success: true, id: saved.id });
   });
 });
 
 router.patch('/edit/:id', (req, res) => {
   const { id } = req.params;
-  db.Course.updateOne({ id: id, 
-    name: req.body.name, 
-    code: req.body.code, 
-    description: req.body.description, 
-    list_topic: req.body.list_topic  }, (err) => {
-      if (err) { res.json({ success: false, error: err }); return; }
+  db.Course.updateOne({
+    id,
+    name: req.body.name,
+    code: req.body.code,
+    description: req.body.description,
+    list_topic: req.body.list_topic,
+  }, (err) => {
+    if (err) { res.json({ success: false, error: err }); return; }
 
-      res.json({ success: true });
+    res.json({ success: true });
   });
 });
 

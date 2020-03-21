@@ -28,7 +28,7 @@ router.post('/new', (req, res) => {
 
   new db.Topic({ name }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
-    
+
     res.json({ success: true, id: saved.id });
   });
 });

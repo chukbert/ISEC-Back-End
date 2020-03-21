@@ -1,0 +1,41 @@
+# This template will build and test your projects
+# * Caches downloaded dependencies and plugins between invocation.
+# * Verify but don't deploy merge requests.
+# * Deploy built artifacts from master branch only.
+
+stages:
+  # - lint
+  # - test
+  - deploy
+
+# Cache downloaded dependencies and plugins between builds.
+# To keep cache across branches add 'key: "$CI_JOB_NAME"'
+# cache:
+#   paths:
+#     - node_modules
+
+# For merge requests do not `deploy` but only run `verify`.
+# See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
+# lint:
+#   stage: lint
+#   script:
+#     - "yarn lint"
+
+# test:
+#   stage: test
+#   script:
+#     - npm run test
+
+# To deploy packages from CI, create a ci_settings.xml file
+# For `master` branch run `mvn deploy` automatically.
+deploy:
+  only:
+    - master
+  stage: deploy
+  script:
+    - cd ~/isec-backend
+    - git fetch origin master
+    - git reset --hard origin/master
+    - docker-compose down
+    - docker-comopse up --build
+    - docker system prune --volumes --force
