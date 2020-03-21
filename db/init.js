@@ -38,7 +38,7 @@ async function initialize() {
   const program1 = await new Program({
     name: 'Teknik Informatika',
     description: 'lorem ipsum dono?',
-    list_teacher: [teacher1.id],
+    list_teacher: [],
     list_course: [{
       course_id: course1.id,
       prerequisite: [],
