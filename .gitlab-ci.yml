@@ -40,4 +40,4 @@ deploy:
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && git fetch origin master && git reset --hard origin master && docker-compose down && docker-compose up --build -d && docker system prune --volumes --force"
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && git fetch origin master && git reset --hard origin/master && docker-compose down && docker-compose up --build -d && docker system prune --volumes --force"
