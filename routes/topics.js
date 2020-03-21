@@ -25,7 +25,7 @@ router.get('/:id', (req, res) => {
 
 router.post('/new', (req, res) => {
   const { name } = req.body;
-
+  console.log(name);
   new db.Topic({ name }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
 

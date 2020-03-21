@@ -24,12 +24,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/new', (req, res) => {
-  new db.Course({
-    list_topic: req.body.list_topic,
-    name: req.body.name,
-    code: req.body.code,
-    description: req.body.description,
-  }).save((err, saved) => {
+  new db.Course(req.body).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true, id: saved.id });
@@ -38,13 +33,8 @@ router.post('/new', (req, res) => {
 
 router.patch('/edit/:id', (req, res) => {
   const { id } = req.params;
-  db.Course.updateOne({
-    id,
-    name: req.body.name,
-    code: req.body.code,
-    description: req.body.description,
-    list_topic: req.body.list_topic,
-  }, (err) => {
+  db.Course.updateOne(
+    { _id: id }, req.body, (err) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true });
