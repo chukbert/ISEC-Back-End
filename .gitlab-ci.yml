@@ -4,22 +4,23 @@
 # * Deploy built artifacts from master branch only.
 
 stages:
-  # - lint
+  - lint
   # - test
   - deploy
 
 # Cache downloaded dependencies and plugins between builds.
 # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-# cache:
-#   paths:
-#     - node_modules
+cache:
+  paths:
+    - node_modules
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
-# lint:
-#   stage: lint
-#   script:
-#     - "yarn lint"
+lint:
+  stage: lint
+  script:
+    - yarn install
+    - yarn lint
 
 # test:
 #   stage: test
