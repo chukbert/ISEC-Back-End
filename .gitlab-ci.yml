@@ -34,7 +34,7 @@ deploy:
     - master
   stage: deploy
   script:
-    - cd ~/isec-backend
+    - cd /home/ec2-user/isec-backend
     - git fetch origin master
     - git reset --hard origin/master
     - docker-compose down
