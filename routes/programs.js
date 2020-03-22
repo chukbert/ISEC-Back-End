@@ -6,7 +6,7 @@ const db = require('../db/models');
 
 
 router.get('/', (req, res) => {
-  db.Course.find().lean().exec()
+  db.Program.find().lean().exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -15,7 +15,12 @@ router.get('/', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  db.Course.findOne({ _id: req.params.id }).populate('list_topic').lean().exec()
+  db.Program.findOne({ _id: req.params.id })
+    .populate('list_teacher', 'username')
+    .populate('list_course.course_id', 'name')
+    .populate('list_course.prerequisite', 'name')
+    .lean()
+    .exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -24,7 +29,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/new', (req, res) => {
-  new db.Course(req.body).save((err, saved) => {
+  new db.Program(req.body).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true, id: saved.id });
@@ -33,7 +38,7 @@ router.post('/new', (req, res) => {
 
 router.patch('/edit/:id', (req, res) => {
   const { id } = req.params;
-  db.Course.updateOne(
+  db.Program.updateOne(
     { _id: id }, req.body, (err) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
@@ -43,7 +48,7 @@ router.patch('/edit/:id', (req, res) => {
 
 router.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
-  db.Course.deleteOne({ _id: id }).exec().then(
+  db.Program.deleteOne({ _id: id }).exec().then(
     () => {
       res.json({ success: true });
     },
