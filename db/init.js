@@ -104,7 +104,7 @@ async function initialize() {
       }],
     }],
   }).save((err, savedTest) => {
-    Student.update(
+    Student.updateOne(
       { _id: student1.id },
       { $push: { enrollprogram_id: savedTest.id } },
     );
