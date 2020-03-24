@@ -9,6 +9,33 @@ router.get('/', (req, res) => {
   res.send('Users API');
 });
 
+// router.get('/student', (req, res) => {
+//   db.Student.find().lean().exec()
+//     .then((val) => {
+//       res.json({ data: val, success: !!val });
+//     }, (err) => {
+//       res.json({ success: false, error: err });
+//     });
+// });
+
+// router.get('/teacher', (req, res) => {
+//   db.Teacher.find().lean().exec()
+//     .then((val) => {
+//       res.json({ data: val, success: !!val });
+//     }, (err) => {
+//       res.json({ success: false, error: err });
+//     });
+// });
+
+// router.get('/admin', (req, res) => {
+//   db.Admin.find().lean().exec()
+//     .then((val) => {
+//       res.json({ data: val, success: !!val });
+//     }, (err) => {
+//       res.json({ success: false, error: err });
+//     });
+// });
+
 router.post('/login', (req, res) => {
   const { username, email, password } = req.body;
   const query = username ? { username } : { email };
