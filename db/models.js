@@ -85,7 +85,7 @@ StudentSchema.pre('save', function (next) {
     next();
   });
 });
-StudentSchema.methods.comparePassword = (candidatePassword, callback) => {
+StudentSchema.methods.comparePassword = function comparePasswword(candidatePassword, callback) {
   bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
     if (err) {
       return callback(err);
@@ -93,8 +93,9 @@ StudentSchema.methods.comparePassword = (candidatePassword, callback) => {
     return callback(null, ismatch);
   });
 };
-StudentSchema.methods.generateAuthToken = () => {
-  const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
+StudentSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign({ id: this.id },
+    process.env.JWTSECRET, { expiresIn: 12 * 3600 });
   return token;
 };
 
@@ -107,7 +108,7 @@ AdminSchema.pre('save', function (next) {
     next();
   });
 });
-AdminSchema.methods.comparePassword = (candidatePassword, callback) => {
+AdminSchema.methods.comparePassword = function comparePasswword(candidatePassword, callback) {
   bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
     if (err) {
       return callback(err);
@@ -115,8 +116,9 @@ AdminSchema.methods.comparePassword = (candidatePassword, callback) => {
     return callback(null, ismatch);
   });
 };
-AdminSchema.methods.generateAuthToken = () => {
-  const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
+AdminSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign({ id: this.id },
+    process.env.JWTSECRET, { expiresIn: 12 * 3600 });
   return token;
 };
 
@@ -129,7 +131,7 @@ TeacherSchema.pre('save', function (next) {
     next();
   });
 });
-TeacherSchema.methods.comparePassword = (candidatePassword, callback) => {
+TeacherSchema.methods.comparePassword = function comparePasswword(candidatePassword, callback) {
   bcrypt.compare(candidatePassword, this.password, (err, ismatch) => {
     if (err) {
       return callback(err);
@@ -137,8 +139,9 @@ TeacherSchema.methods.comparePassword = (candidatePassword, callback) => {
     return callback(null, ismatch);
   });
 };
-TeacherSchema.methods.generateAuthToken = () => {
-  const token = jwt.sign({ _id: this.id }, process.env.JWTSECRET, { expiresIn: 12 * 3600 });
+TeacherSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign({ id: this.id },
+    process.env.JWTSECRET, { expiresIn: 12 * 3600 });
   return token;
 };
 
