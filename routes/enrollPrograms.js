@@ -82,14 +82,14 @@ router.patch('/start/:program_id/', (req, res) => {
 router.patch('/finish/:program_id/', (req, res) => {
   let program_id = req.params.program_id;
   
-  db.Student.findOne({ 'username': req.body.username }, function(err, student) {
-    if (err) return handleError(err);
+  db.Student.findOne({ 'username': req.body.username }, function(errStudent, student) {
+    if (errStudent) return handleError(errStudent);
 
-    db.Topic.findOne({ 'name': req.body.topic_name }, function(err, topic) {
-      if (err) return handleError(err);
+    db.Topic.findOne({ 'name': req.body.topic_name }, function(errTopic, topic) {
+      if (errTopic) return handleError(errTopic);
 
-      db.Course.findOne({ 'name': req.body.course_name }, function(err, course) {
-        if (err) return handleError(err);
+      db.Course.findOne({ 'name': req.body.course_name }, function(errCourse, course) {
+        if (errCourse) return handleError(errCourse);
 
         db.EnrollProgram.findOneAndUpdate(
           { 'user_id': student.id, 
@@ -101,8 +101,8 @@ router.patch('/finish/:program_id/', (req, res) => {
             useFindAndModify: false,
             arrayFilters: [  { "idx": {'courses.course_id': course.id } } ],
             multi: false},
-          (err) => {
-            if (err) { res.json({ success: false, error: err}); return; }
+          (errEnroll) => {
+            if (errEnroll) { res.json({ success: false, error: Enroll}); return; }
             db.EnrollProgram.findOne(
               { 'user_id': student.id, 
                 'program_id': program_id,
