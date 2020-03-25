@@ -35,10 +35,11 @@ router.patch('/edit/:id', (req, res) => {
   const { id } = req.params;
   db.Course.updateOne(
     { _id: id }, req.body, (err) => {
-    if (err) { res.json({ success: false, error: err }); return; }
+      if (err) { res.json({ success: false, error: err }); return; }
 
-    res.json({ success: true });
-  });
+      res.json({ success: true });
+    },
+  );
 });
 
 router.delete('/delete/:id', (req, res) => {
