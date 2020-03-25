@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   db.Student.findOne({ _id: req.params.id })
-    .populate('enrollprogam_id')
+    .populate('enrollprogram_id')
     .lean()
     .exec()
     .then((val) => {

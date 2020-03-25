@@ -97,17 +97,32 @@ async function initialize() {
     status_program: 0,
     courses: [{
       course_id: course1.id,
-      status_course: 1,
+      status_course: 0,
       topics: [{
         topic_id: topic1.id,
-        status_topic: 1,
-      }],
-    }],
+        status_topic: 0
+      },{
+        topic_id: topic2.id,
+        status_topic: 0
+      }]
+    },{
+      course_id: course2.id,
+      status_course: -1,
+      topics: [{
+        topic_id: topic3.id,
+        status_topic: 0
+      }]
+    }]
   }).save((err, savedTest) => {
-    Student.updateOne(
-      { _id: student1.id },
-      { $push: { enrollprogram_id: savedTest.id } },
-    );
+    Student.findByIdAndUpdate(
+      savedTest.user_id,
+      { $push: { 'enrollprogram_id': savedTest.id } },
+      { useFindAndModify: false },
+      (err) => {
+        if (err) { res.json({ success: false, error: err}); return; }
+
+        res.json({ success: true, id:saved.id, user_id:saved.user_id });
+      });
   });
   process.exit();
 }
