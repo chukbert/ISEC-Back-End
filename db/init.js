@@ -97,10 +97,20 @@ async function initialize() {
     status_program: 0,
     courses: [{
       course_id: course1.id,
-      status_course: 1,
+      status_course: 0,
       topics: [{
         topic_id: topic1.id,
-        status_topic: 1,
+        status_topic: 0,
+      }, {
+        topic_id: topic2.id,
+        status_topic: 0,
+      }],
+    }, {
+      course_id: course2.id,
+      status_course: -1,
+      topics: [{
+        topic_id: topic3.id,
+        status_topic: 0,
       }],
     }],
   }).save((err, savedTest) => {
