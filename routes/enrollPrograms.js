@@ -1,5 +1,6 @@
 const express = require('express');
-// const auth = require('../middleware/auth');
+const auth = require('../middleware/auth');
+
 const router = express.Router();
 
 const db = require('../db/models');
@@ -20,8 +21,8 @@ const db = require('../db/models');
 // 1 = in progress
 // 2 = selesai
 
-router.get('/', (req, res) => {
-  db.EnrollProgram.find().populate('user_id').lean().exec()
+router.get('/', auth, (req, res) => {
+  db.EnrollProgram.find({ user_id: req.id }).lean().exec()
     .then((val) => {
       res.json({ data: val, success: !!val });
     }, (err) => {
@@ -29,10 +30,10 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/:id', (req, res) => {
-  db.EnrollProgram.findOne({ _id: req.params.id })
-    .populate('user_id')
+router.get('/:id', auth, (req, res) => {
+  db.EnrollProgram.findOne({ program_id: req.params.id, user_id: req.id })
     .populate('courses.course_id')
+    .populate('program_id')
     .lean()
     .exec()
     .then((val) => {
@@ -41,10 +42,33 @@ router.get('/:id', (req, res) => {
       res.json({ success: false, error: err });
     });
 });
+
+router.get('/:id/courses/:courseid', auth, (req, res) => {
+  db.EnrollProgram.findOne({ program_id: req.params.id, user_id: req.id })
+    .populate('courses.course_id')
+    .populate('courses.topics.topic_id')
+    .lean()
+    .exec()
+    .then((val) => {
+      let i = 0;
+      while (i < val.courses.length) {
+        // eslint-disable-next-line no-underscore-dangle
+        if (val.courses[i].course_id._id.toString() === req.params.courseid.toString()) {
+          res.json({ data: val.courses[i], success: !!val });
+          return;
+        }
+        i += 1;
+      }
+      res.json({ error: 'Course not found', success: false });
+    }, (err) => {
+      res.json({ success: false, error: err });
+    });
+});
+
 // POST /enrollprograms/new/:id
 // :id itu id_program
 // body : user_id
-router.post('/new/:id', (req, res) => {
+router.post('/new/:id', auth, (req, res) => {
   db.Program.findById(req.params.id).populate('list_course.course_id').exec((errProgram, resultProgram) => {
     if (errProgram) {
       res.json({ success: false, error: errProgram });
@@ -53,7 +77,7 @@ router.post('/new/:id', (req, res) => {
     } else {
       new db.EnrollProgram({
         program_id: resultProgram.id,
-        user_id: req.body.user_id,
+        user_id: req.id,
         status_program: 0,
       }).save((err, saved) => {
         if (err) { res.json({ success: false, error: err }); return; }
@@ -124,11 +148,10 @@ router.post('/new/:id', (req, res) => {
 // Buat start pertama kali program, (status program 0 -> 1)
 // PATCH enrollprograms/start/:program_id
 // body : user_id
-router.patch('/start/:program_id/', (req, res) => {
+router.patch('/start/:program_id/', auth, (req, res) => {
   const programid = req.params.program_id;
-  const username = req.body.user_id;
 
-  db.Student.findOne({ _id: username }, (errFindStudent, student) => {
+  db.Student.findOne({ _id: req.id }, (errFindStudent, student) => {
     if (errFindStudent) return;
 
     db.EnrollProgram.findOneAndUpdate(
@@ -151,9 +174,9 @@ router.patch('/start/:program_id/', (req, res) => {
 // Buat enroll course, (status course 0 -> 1)
 // PATCH enrollprograms/enroll/:program_id/
 // body : user_id, course_id
-router.patch('/enroll/:program_id/', (req, res) => {
+router.patch('/enroll/:program_id/', auth, (req, res) => {
   const programId = req.params.program_id;
-  const userId = req.body.user_id;
+  const userId = req.id;
   const courseId = req.body.course_id;
 
   db.Student.findOne({ _id: userId }, (errFindStudentForEnroll, student) => {
@@ -178,9 +201,9 @@ router.patch('/enroll/:program_id/', (req, res) => {
 // Buat start topic, (status topic 0 -> 1)
 // PATCH enrollprograms/start_topic/:program_id/
 // body : user_id, course_id, topic_id
-router.patch('/start_topic/:program_id/', (req, res) => {
+router.patch('/start_topic/:program_id/', auth, (req, res) => {
   // let program_id = req.params.program_id;
-  const studentId = req.body.user_id;
+  const studentId = req.id;
   const courseId = req.body.course_id;
   const topicId = req.body.topic_id;
 
@@ -199,10 +222,10 @@ router.patch('/start_topic/:program_id/', (req, res) => {
 // Kalau prereq course terpenuhi, update status course (-1 -> 0)
 // PATCH enrollprograms/finish/:program_id/
 // body : user_id, topic_id, course_id
-router.patch('/finish/:program_id/', (req, res) => {
+router.patch('/finish/:program_id/', auth, (req, res) => {
   const programId = req.params.program_id;
 
-  db.Student.findOne({ _id: req.body.user_id }, (errStudent, student) => {
+  db.Student.findOne({ _id: req.id }, (errStudent, student) => {
     if (errStudent) { res.json({ success: false, error: errStudent }); return; }
 
     db.Topic.findOne({ _id: req.body.topic_id }, (errTopic, topic) => {
@@ -347,11 +370,19 @@ router.patch('/finish/:program_id/', (req, res) => {
 });
 
 
-router.delete('/delete/:id', (req, res) => {
+router.delete('/delete/:id', auth, (req, res) => {
   const { id } = req.params;
-  db.EnrollProgram.deleteOne({ _id: id }).exec().then(
-    () => {
-      res.json({ success: true });
+  db.EnrollProgram.findOneAndDelete({ program_id: id, user_id: req.id }).exec().then(
+    (result) => {
+      db.Student.findByIdAndUpdate(
+        req.id,
+        { $pull: { enrollprogram_id: result.id } },
+        { useFindAndModify: false },
+        (errStudentFind) => {
+          if (errStudentFind) { res.json({ success: false, error: errStudentFind }); return; }
+          res.json({ success: true, deleted: result.id });
+        },
+      );
     },
   ).catch((err) => res.json({ success: false, error: err }));
 });
