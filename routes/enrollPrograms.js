@@ -1,5 +1,5 @@
 const express = require('express');
-const auth = require('../middleware/auth');
+// const auth = require('../middleware/auth');
 const router = express.Router();
 
 const db = require('../db/models');
@@ -50,22 +50,22 @@ router.post('/new/:id', (req, res) => {
         'status_program': 0,
       }).save( function (err, saved) {
         if (err) { res.json({ success: false, error: err }); return; }
-        console.log(resultProgram);
-        for (let i = 0; i < resultProgram.list_course.length; i++){
+        // console.log(resultProgram);
+        for (let i = 0; i < resultProgram.list_course.length; i+=1){
           let len = resultProgram.list_course[i].prerequisite.length;
-          if (len != 0){
+          if (len !== 0){
             len = -1;
           } 
           db.EnrollProgram.findByIdAndUpdate(
             saved.id,
             { $push: { courses: { 
-              course_id: resultProgram.list_course[i].course_id._id,
+              course_id: resultProgram.list_course[i].course_id.id,
               prerequisite: resultProgram.list_course[i].prerequisite,
               status_course: len
             } } },
             { useFindAndModify: false,
               new: true },
-            function (errUpdate, resultUpdate) {
+            function (errUpdate) {
               if (errUpdate) { res.json({ success: false, error: errUpdate}); return; }
               for (let j = 0; j < resultProgram.list_course[i].course_id.list_topic.length; j++){
 
@@ -78,8 +78,8 @@ router.post('/new/:id', (req, res) => {
                     status_topic: 0
                   } } },
                   { useFindAndModify: false },
-                  function (errUpdate, resultUpdate) {
-                    if (errUpdate) { res.json({ success: false, error: errUpdate}); return; }
+                  function (errUpdateEnrollCourse) {
+                    if (errUpdateEnrollCourse) { res.json({ success: false, error: errUpdateEnrollCourse}); return; }
                   }
                 );
               }
@@ -90,8 +90,8 @@ router.post('/new/:id', (req, res) => {
           saved.user_id,
           { $push: { 'enrollprogram_id': saved.id } },
           { useFindAndModify: false },
-          (err) => {
-            if (err) { res.json({ success: false, error: err}); return; }
+          (errStudentFind) => {
+            if (errStudentFind) { res.json({ success: false, error: errStudentFind}); return; }
 
             res.json({ success: true, id:saved.id, user_id:saved.user_id });
           });
@@ -106,19 +106,19 @@ router.post('/new/:id', (req, res) => {
 
 // Buat start pertama kali program, (status program 0 -> 1)
 router.patch('/start/:program_id/', (req, res) => {
-  let program_id = req.params.program_id;
+  let programid = req.params.program_id;
   let username = req.body.user_id;
 
-  db.Student.findOne({ _id: username }, function(err, student){
+  db.Student.findOne({ _id: username }, function(errFindStudent, student){
     
-    if (err) return handleError(err);
+    if (errFindStudent) return;
     
     db.EnrollProgram.findOneAndUpdate(
       { 'user_id': student.id, 
-        'program_id': program_id},
+        'program_id': programid},
       { $set: {'status_program': 1}},
-      (err) => {
-        if (err) { res.json({ success: false, error: err}); return; }
+      (errUpdateStatusProgram) => {
+        if (errUpdateStatusProgram) { res.json({ success: false, error: errUpdateStatusProgram}); return; }
 
         res.json({ success: true });
       });
@@ -127,21 +127,21 @@ router.patch('/start/:program_id/', (req, res) => {
 
 // Buat enroll course, (status course 0 -> 1)
 router.patch('/enroll/:program_id/', (req, res) => {
-  let program_id = req.params.program_id;
-  let user_id = req.body.user_id;
-  let course_id = req.body.course_id;
+  let programId = req.params.program_id;
+  let userId = req.body.user_id;
+  let courseId = req.body.course_id;
 
-  db.Student.findOne({ _id: user_id }, function(err, student){
+  db.Student.findOne({ _id: userId }, function(errFindStudentForEnroll, student){
     
-    if (err) return handleError(err);
+    if (errFindStudentForEnroll) return;
     
     db.EnrollProgram.findOneAndUpdate(
       { 'user_id': student.id, 
-        'program_id': program_id, 
-        'courses.course_id': course_id},
+        'program_id': programId, 
+        'courses.course_id': courseId},
       { $set: { 'courses.$.status_course': 1}},
-      (err) => {
-        if (err) { res.json({ success: false, error: err}); return; }
+      (errEnrollCourse) => {
+        if (errEnrollCourse) { res.json({ success: false, error: errEnrollCourse}); return; }
 
         res.json({ success: true });
       });
@@ -170,13 +170,13 @@ router.patch('/finish/:program_id/', (req, res) => {
   let program_id = req.params.program_id;
   
   db.Student.findOne({ _id: req.body.user_id }, function(errStudent, student) {
-    if (errStudent) return handleError(errStudent);
+    if (errStudent) return (errStudent);
 
     db.Topic.findOne({ _id: req.body.topic_id }, function(errTopic, topic) {
-      if (errTopic) return handleError(errTopic);
+      if (errTopic) return (errTopic);
 
       db.Course.findOne({ _id: req.body.course_id }, function(errCourse, course) {
-        if (errCourse) return handleError(errCourse);
+        if (errCourse) return (errCourse);
 
         db.EnrollProgram.findOneAndUpdate(
           {  'user_id': student.id, },
@@ -191,11 +191,11 @@ router.patch('/finish/:program_id/', (req, res) => {
               function (err, enroll) {
                 if (err) return;
                 let finished = true;
-                for (let i=0; i < enroll.courses.length; i++) {
-                  if (enroll.courses[i].course_id == course.id) {
+                for (let i=0; i < enroll.courses.length; i+=1) {
+                  if (enroll.courses[i].course_id === course.id) {
                     let j = 0;
                     while (j < enroll.courses[i].topics.length && finished){
-                      if (enroll.courses[i].topics[j].status_topic != 2) {
+                      if (enroll.courses[i].topics[j].status_topic !== 2) {
                         finished = false;
                       }
                       j += 1;
@@ -218,8 +218,8 @@ router.patch('/finish/:program_id/', (req, res) => {
                       if (errEnroll) return; 
                       // Buat update kalo program sudah selesai (semua status_course = 2 )
                       let programFinish = true;
-                      for (let i=0; i < resultEnroll.courses.length; i++) {
-                        if (resultEnroll.courses[i].status_course != 2) {
+                      for (let i=0; i < resultEnroll.courses.length; i+=1) {
+                        if (resultEnroll.courses[i].status_course !== 2) {
                           programFinish = false;
                         }
                       }
@@ -230,28 +230,28 @@ router.patch('/finish/:program_id/', (req, res) => {
                           { $set: {'status_program': 2}},
                           { useFindAndModify: false,
                             new:true }, 
-                          (errUpdateProgram, resUpdateProgram) => {
+                          (errUpdateProgram) => {
                             if (errUpdateProgram) return; 
                           });
                       }
                       // Buat update course jika prereqnya finish (-1 -> 0)
-                      for (let i=0; i < resultEnroll.courses.length; i++) {
+                      for (let i=0; i < resultEnroll.courses.length; i+=1) {
                         
                         if (resultEnroll.courses[i].status_course === -1) {
                           
-                          for (let j=0; j < resultEnroll.program_id.list_course.length; j++) {
+                          for (let j=0; j < resultEnroll.program_id.list_course.length; j+=1) {
                             
-                            if (resultEnroll.program_id.list_course[j].course_id.toString() == resultEnroll.courses[i].course_id.toString()) {
+                            if (resultEnroll.program_id.list_course[j].course_id.toString() === resultEnroll.courses[i].course_id.toString()) {
                               let finishedCourse = true;
                               let k = 0;
                               
-                              if (resultEnroll.program_id.list_course[j].prerequisite.length != null) { 
+                              if (resultEnroll.program_id.list_course[j].prerequisite.length !== null) { 
                                 while (k < resultEnroll.program_id.list_course[j].prerequisite.length) {
                                   let idx = resultEnroll.program_id.list_course[j].prerequisite[k];
                                   for (let l=0; l < resultEnroll.courses.length; l++) {
-                                    if (resultEnroll.courses[l].course_id == idx) {
+                                    if (resultEnroll.courses[l].course_id === idx) {
                                       
-                                      if (resultEnroll.courses[l].status_course != 2) {
+                                      if (resultEnroll.courses[l].status_course !== 2) {
                                         finishedCourse = false;
                                       }
                                     }
@@ -268,7 +268,7 @@ router.patch('/finish/:program_id/', (req, res) => {
                                   { $set: {'courses.$.status_course': 0}},
                                   { useFindAndModify: false,
                                     new:true }, 
-                                  (errUpdateCourse, resUpdateCourse) => {
+                                  (errUpdateCourse) => {
                                     if (errUpdateCourse) return; 
                                   });
                               } 
