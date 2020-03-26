@@ -4,9 +4,31 @@ const db = require('../db/models');
 
 const router = express.Router();
 
-/* GET users listing. */
-router.get('/', (req, res) => {
-  res.send('Users API');
+router.get('/', auth, (req, res) => {
+  db.Student.findById(req.id).populate('enrollprogram_id').lean().exec()
+    .then((resultStudent) => {
+      if (!resultStudent) {
+        db.Teacher.findById(req.id).populate('programs.program_id').lean().exec()
+          .then((resultTeacher) => {
+            if (!resultTeacher) {
+              db.Admin.findById(req.id).populate('program_id').lean().exec()
+                .then((resultAdmin) => {
+                  res.json({ data: resultAdmin, success: !!resultAdmin });
+                }, (err) => {
+                  res.json({ success: false, error: err });
+                });
+            } else {
+              res.json({ data: resultTeacher, success: !!resultTeacher });
+            }
+          }, (err) => {
+            res.json({ success: false, error: err });
+          });
+      } else {
+        res.json({ data: resultStudent, success: !!resultStudent });
+      }
+    }, (err) => {
+      res.json({ success: false, error: err });
+    });
 });
 
 // router.get('/student', (req, res) => {

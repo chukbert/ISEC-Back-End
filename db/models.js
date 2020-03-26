@@ -66,6 +66,7 @@ const ListTopicCourseSchema = new mongoose.Schema({
 const ListCourseProgramSchema = new mongoose.Schema({
   course_id: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Course' },
   status_course: Number,
+  prerequisite: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   topics: [ListTopicCourseSchema],
 });
 
