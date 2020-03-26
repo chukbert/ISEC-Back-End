@@ -135,6 +135,8 @@ router.post('/auth', auth, (req, res) => {
           db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
             if (errAdmin) {
               res.json({ success: false, error: errAdmin });
+            } else if (!resultAdmin) {
+              res.json({ success: false, error: 'Wrong Token' });
             } else {
               res.json({ success: true, username: resultAdmin.username, role: resultAdmin.role });
             }
