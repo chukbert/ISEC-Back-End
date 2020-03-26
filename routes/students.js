@@ -27,7 +27,11 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/new', (req, res) => {
-  new db.Student(req.body).save((err, saved) => {
+  const { username, email, password } = req.body;
+
+  new db.Student({
+    username, email, password, 'role': 0
+  }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true, id: saved.id });
@@ -36,8 +40,9 @@ router.post('/new', (req, res) => {
 
 router.patch('/edit/:id', (req, res) => {
   const { id } = req.params;
+  const { username, email, password } = req.body;
   db.Student.updateOne(
-    { _id: id }, req.body, (err) => {
+    { _id: id }, { username, email, password }, (err) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
     res.json({ success: true });

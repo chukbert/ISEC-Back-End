@@ -107,9 +107,9 @@ router.post('/new/:id', (req, res) => {
 // Buat start pertama kali program, (status program 0 -> 1)
 router.patch('/start/:program_id/', (req, res) => {
   let program_id = req.params.program_id;
-  let username = req.body.username;
+  let username = req.body.user_id;
 
-  db.Student.findOne({ 'username': username }, function(err, student){
+  db.Student.findOne({ _id: username }, function(err, student){
     
     if (err) return handleError(err);
     
@@ -128,10 +128,10 @@ router.patch('/start/:program_id/', (req, res) => {
 // Buat enroll course, (status course 0 -> 1)
 router.patch('/enroll/:program_id/', (req, res) => {
   let program_id = req.params.program_id;
-  let username = req.body.username;
+  let user_id = req.body.user_id;
   let course_id = req.body.course_id;
 
-  db.Student.findOne({ 'username': username }, function(err, student){
+  db.Student.findOne({ _id: user_id }, function(err, student){
     
     if (err) return handleError(err);
     
@@ -169,13 +169,13 @@ router.patch('/start_topic/:program_id/', (req, res) => {
 router.patch('/finish/:program_id/', (req, res) => {
   let program_id = req.params.program_id;
   
-  db.Student.findOne({ 'username': req.body.username }, function(errStudent, student) {
+  db.Student.findOne({ _id: req.body.user_id }, function(errStudent, student) {
     if (errStudent) return handleError(errStudent);
 
-    db.Topic.findOne({ 'name': req.body.topic_name }, function(errTopic, topic) {
+    db.Topic.findOne({ _id: req.body.topic_id }, function(errTopic, topic) {
       if (errTopic) return handleError(errTopic);
 
-      db.Course.findOne({ 'name': req.body.course_name }, function(errCourse, course) {
+      db.Course.findOne({ _id: req.body.course_id }, function(errCourse, course) {
         if (errCourse) return handleError(errCourse);
 
         db.EnrollProgram.findOneAndUpdate(
