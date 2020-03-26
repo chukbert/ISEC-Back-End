@@ -100,19 +100,19 @@ async function initialize() {
       status_course: 0,
       topics: [{
         topic_id: topic1.id,
-        status_topic: 0
-      },{
+        status_topic: 0,
+      }, {
         topic_id: topic2.id,
-        status_topic: 0
-      }]
-    },{
+        status_topic: 0,
+      }],
+    }, {
       course_id: course2.id,
       status_course: -1,
       topics: [{
         topic_id: topic3.id,
-        status_topic: 0
-      }]
-    }]
+        status_topic: 0,
+      }],
+    }],
   }).save((err, savedTest) => {
     Student.update(
       { _id: student1.id },
@@ -120,7 +120,6 @@ async function initialize() {
     );
   });
   process.exit();
-
 }
 
 initialize();

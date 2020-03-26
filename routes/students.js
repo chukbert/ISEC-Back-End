@@ -30,7 +30,7 @@ router.post('/new', (req, res) => {
   const { username, email, password } = req.body;
 
   new db.Student({
-    username, email, password, 'role': 0
+    username, email, password, role: 0,
   }).save((err, saved) => {
     if (err) { res.json({ success: false, error: err }); return; }
 
@@ -43,10 +43,11 @@ router.patch('/edit/:id', (req, res) => {
   const { username, email, password } = req.body;
   db.Student.updateOne(
     { _id: id }, { username, email, password }, (err) => {
-    if (err) { res.json({ success: false, error: err }); return; }
+      if (err) { res.json({ success: false, error: err }); return; }
 
-    res.json({ success: true });
-  });
+      res.json({ success: true });
+    },
+  );
 });
 
 module.exports = router;
