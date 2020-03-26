@@ -35,6 +35,13 @@ async function initialize() {
     list_topic: [topic3.id],
   }).save();
 
+  const course3 = await new Course({
+    name: 'Proyek Perangkat Lunak',
+    code: 'IF3250',
+    description: 'lorem ipsum dolor',
+    list_topic: [topic2.id],
+  }).save();
+
   const program1 = await new Program({
     name: 'Teknik Informatika',
     description: 'lorem ipsum dono?',
@@ -45,6 +52,9 @@ async function initialize() {
     }, {
       course_id: course2.id,
       prerequisite: [course1.id],
+    }, {
+      course_id: course3.id,
+      prerequisite: [course1.id, course2.id],
     }],
   }).save();
 

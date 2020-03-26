@@ -78,7 +78,7 @@ router.post('/new/:id', auth, (req, res) => {
       new db.EnrollProgram({
         program_id: resultProgram.id,
         user_id: req.id,
-        status_program: 0,
+        status_program: 1,
       }).save((err, saved) => {
         if (err) { res.json({ success: false, error: err }); return; }
         // console.log(resultProgram);
@@ -145,32 +145,6 @@ router.post('/new/:id', auth, (req, res) => {
   });
 });
 
-// Buat start pertama kali program, (status program 0 -> 1)
-// PATCH enrollprograms/start/:program_id
-// body : user_id
-router.patch('/start/:program_id/', auth, (req, res) => {
-  const programid = req.params.program_id;
-
-  db.Student.findOne({ _id: req.id }, (errFindStudent, student) => {
-    if (errFindStudent) return;
-
-    db.EnrollProgram.findOneAndUpdate(
-      {
-        user_id: student.id,
-        program_id: programid,
-      },
-      { $set: { status_program: 1 } },
-      (errUpdateStatusProgram) => {
-        if (errUpdateStatusProgram) {
-          res.json({ success: false, error: errUpdateStatusProgram }); return;
-        }
-
-        res.json({ success: true });
-      },
-    );
-  });
-});
-
 // Buat enroll course, (status course 0 -> 1)
 // PATCH enrollprograms/enroll/:program_id/
 // body : user_id, course_id
@@ -227,13 +201,13 @@ router.patch('/finish/:program_id/', auth, (req, res) => {
 
   db.Student.findOne({ _id: req.id }, (errStudent, student) => {
     if (errStudent) { res.json({ success: false, error: errStudent }); return; }
-
+    if (!student) { res.json({ success: false, error: 'No Student' }); return; }
     db.Topic.findOne({ _id: req.body.topic_id }, (errTopic, topic) => {
       if (errTopic) { res.json({ success: false, error: errTopic }); return; }
-
+      if (!topic) { res.json({ success: false, error: 'No Topic' }); return; }
       db.Course.findOne({ _id: req.body.course_id }, (errCourse, course) => {
         if (errCourse) { res.json({ success: false, error: errCourse }); return; }
-
+        if (!course) { res.json({ success: false, error: 'No Course' }); return; }
         db.EnrollProgram.findOneAndUpdate(
           { user_id: student.id },
           { $set: { 'courses.$[outer].topics.$[inner].status_topic': 2 } },
