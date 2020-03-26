@@ -15,6 +15,11 @@ const db = require('../db/models');
 // 1 = sedang mengerjakan
 // 2 = sudah selesai 
 
+// status topic :
+// 0 = belum mulai
+// 1 = in progress
+// 2 = selesai
+
 router.get('/', (req, res) => {
   db.EnrollProgram.find().populate('user_id').lean().exec()
     .then((val) => {
@@ -36,7 +41,9 @@ router.get('/:id', (req, res) => {
       res.json({ success: false, error: err });
     });
 });
-
+// POST /enrollprograms/new/:id 
+// :id itu id_program
+// body : user_id
 router.post('/new/:id', (req, res) => {
   db.Program.findById(req.params.id).populate('list_course.course_id').exec(function (errProgram, resultProgram) {
     if (errProgram) {
@@ -46,7 +53,7 @@ router.post('/new/:id', (req, res) => {
     } else {
       new db.EnrollProgram({
         'program_id': resultProgram.id,
-        'user_id': req.body.userid,
+        'user_id': req.body.user_id,
         'status_program': 0,
       }).save( function (err, saved) {
         if (err) { res.json({ success: false, error: err }); return; }
@@ -67,11 +74,11 @@ router.post('/new/:id', (req, res) => {
               new: true },
             function (errUpdate) {
               if (errUpdate) { res.json({ success: false, error: errUpdate}); return; }
-              for (let j = 0; j < resultProgram.list_course[i].course_id.list_topic.length; j++){
+              for (let j = 0; j < resultProgram.list_course[i].course_id.list_topic.length; j+=1){
 
                 db.EnrollProgram.findOneAndUpdate(
                   { _id: saved.id,
-                    'courses.course_id': resultProgram.list_course[i].course_id._id
+                    'courses.course_id': resultProgram.list_course[i].course_id.id
                   },
                   { $push: { 'courses.$.topics': { 
                     topic_id: resultProgram.list_course[i].course_id.list_topic[j],
@@ -105,6 +112,8 @@ router.post('/new/:id', (req, res) => {
 //   "course_name": "Object-oriented Programming"
 
 // Buat start pertama kali program, (status program 0 -> 1)
+// PATCH enrollprograms/start/:program_id
+// body : user_id
 router.patch('/start/:program_id/', (req, res) => {
   let programid = req.params.program_id;
   let username = req.body.user_id;
@@ -126,6 +135,8 @@ router.patch('/start/:program_id/', (req, res) => {
 });
 
 // Buat enroll course, (status course 0 -> 1)
+// PATCH enrollprograms/enroll/:program_id/
+// body : user_id, course_id
 router.patch('/enroll/:program_id/', (req, res) => {
   let programId = req.params.program_id;
   let userId = req.body.user_id;
@@ -149,16 +160,18 @@ router.patch('/enroll/:program_id/', (req, res) => {
 });
 
 // Buat start topic, (status topic 0 -> 1)
+// PATCH enrollprograms/start_topic/:program_id/
+// body : user_id, course_id, topic_id
 router.patch('/start_topic/:program_id/', (req, res) => {
   // let program_id = req.params.program_id;
-  let student_id = req.body.user_id;
-  let course_id = req.body.course_id;
-  let topic_id = req.body.topic_id;
+  let studentId = req.body.user_id;
+  let courseId = req.body.course_id;
+  let topicId = req.body.topic_id;
 
   db.EnrollProgram.findOneAndUpdate(
-    {  'user_id': student_id, },
+    {  'user_id': studentId, },
     { $set: { "courses.$[outer].topics.$[inner].status_topic": 1 } },
-    { arrayFilters: [ {"outer.course_id": course_id}, {"inner.topic_id": topic_id}]},
+    { arrayFilters: [ {"outer.course_id": courseId}, {"inner.topic_id": topicId}]},
     (errStartTopic) => {
       if (errStartTopic) { res.json({ success: false, error: errStartTopic}); return; }
       res.json({ success: true });
@@ -166,8 +179,12 @@ router.patch('/start_topic/:program_id/', (req, res) => {
     });
 });
 
+// Buat finish topic(1->2) kalau semua topic finish, update status course (1 -> 2)
+// Kalau prereq course terpenuhi, update status course (-1 -> 0)
+// PATCH enrollprograms/finish/:program_id/
+// body : user_id, topic_id, course_id
 router.patch('/finish/:program_id/', (req, res) => {
-  let program_id = req.params.program_id;
+  let programId = req.params.program_id;
   
   db.Student.findOne({ _id: req.body.user_id }, function(errStudent, student) {
     if (errStudent) return (errStudent);
@@ -187,12 +204,12 @@ router.patch('/finish/:program_id/', (req, res) => {
             
             db.EnrollProgram.findOne(
               { 'user_id': student.id, 
-                'program_id': program_id},
+                'program_id': programId},
               function (err, enroll) {
                 if (err) return;
                 let finished = true;
                 for (let i=0; i < enroll.courses.length; i+=1) {
-                  if (enroll.courses[i].course_id === course.id) {
+                  if (enroll.courses[i].course_id.toString() === course.id.toString()) {
                     let j = 0;
                     while (j < enroll.courses[i].topics.length && finished){
                       if (enroll.courses[i].topics[j].status_topic !== 2) {
@@ -207,15 +224,15 @@ router.patch('/finish/:program_id/', (req, res) => {
                 if (finished) {
                   db.EnrollProgram.findOneAndUpdate(
                     { 'user_id': student.id, 
-                      'program_id': program_id, 
+                      'program_id': programId, 
                       'courses.course_id': course.id},
                     { 'courses.$.status_course': 2},
                     { useFindAndModify: false ,
                       new: true })
                       .populate('program_id')
                       .populate('program_id.list_course.course_id').exec( 
-                    function (errEnroll, resultEnroll) {
-                      if (errEnroll) return; 
+                    function (errFinishCourse, resultEnroll) {
+                      if (errFinishCourse) return; 
                       // Buat update kalo program sudah selesai (semua status_course = 2 )
                       let programFinish = true;
                       for (let i=0; i < resultEnroll.courses.length; i+=1) {
@@ -226,12 +243,12 @@ router.patch('/finish/:program_id/', (req, res) => {
                       if (programFinish) {
                         db.EnrollProgram.findOneAndUpdate(
                           { 'user_id': student.id, 
-                            'program_id': program_id },
+                            'program_id': programId },
                           { $set: {'status_program': 2}},
                           { useFindAndModify: false,
                             new:true }, 
                           (errUpdateProgram) => {
-                            if (errUpdateProgram) return; 
+                            if (errUpdateProgram) return errUpdateProgram; 
                           });
                       }
                       // Buat update course jika prereqnya finish (-1 -> 0)
@@ -240,36 +257,38 @@ router.patch('/finish/:program_id/', (req, res) => {
                         if (resultEnroll.courses[i].status_course === -1) {
                           
                           for (let j=0; j < resultEnroll.program_id.list_course.length; j+=1) {
-                            
-                            if (resultEnroll.program_id.list_course[j].course_id.toString() === resultEnroll.courses[i].course_id.toString()) {
+                            let courseIdLC = resultEnroll.program_id.list_course[j].course_id.toString();
+                            let courseIdEnrollCourse = resultEnroll.courses[i].course_id.toString();
+                            if (courseIdLC === courseIdEnrollCourse) {
                               let finishedCourse = true;
                               let k = 0;
                               
                               if (resultEnroll.program_id.list_course[j].prerequisite.length !== null) { 
                                 while (k < resultEnroll.program_id.list_course[j].prerequisite.length) {
                                   let idx = resultEnroll.program_id.list_course[j].prerequisite[k];
-                                  for (let l=0; l < resultEnroll.courses.length; l++) {
-                                    if (resultEnroll.courses[l].course_id === idx) {
+                                  idx = idx.toString();
+                                  for (let l=0; l < resultEnroll.courses.length; l+=1) {
+                                    if (resultEnroll.courses[l].course_id.toString() === idx) {
                                       
                                       if (resultEnroll.courses[l].status_course !== 2) {
                                         finishedCourse = false;
                                       }
                                     }
                                   }
-                                  k++;
+                                  k+=1;
                                 }
                              }
                               if (finishedCourse) {
                                 
                                 db.EnrollProgram.findOneAndUpdate(
                                   { 'user_id': student.id, 
-                                    'program_id': program_id, 
+                                    'program_id': programId, 
                                     'courses.course_id': resultEnroll.courses[i].course_id.toString() },
                                   { $set: {'courses.$.status_course': 0}},
                                   { useFindAndModify: false,
                                     new:true }, 
                                   (errUpdateCourse) => {
-                                    if (errUpdateCourse) return; 
+                                    if (errUpdateCourse) return errUpdateCourse; 
                                   });
                               } 
                             }

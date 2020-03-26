@@ -114,17 +114,13 @@ async function initialize() {
       }]
     }]
   }).save((err, savedTest) => {
-    Student.findByIdAndUpdate(
-      savedTest.user_id,
-      { $push: { 'enrollprogram_id': savedTest.id } },
-      { useFindAndModify: false },
-      (err) => {
-        if (err) { res.json({ success: false, error: err}); return; }
-
-        res.json({ success: true, id:saved.id, user_id:saved.user_id });
-      });
+    Student.update(
+      { _id: student1.id },
+      { $push: { enrollprogram_id: savedTest.id } },
+    );
   });
   process.exit();
+
 }
 
 initialize();
