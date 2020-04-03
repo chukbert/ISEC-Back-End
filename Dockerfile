@@ -4,7 +4,7 @@ FROM node:12.16.1-alpine3.11
 WORKDIR /server/
 
 # copy package.json into the container at /server
-COPY package.json yarn.lock /server/
+COPY . /server/
 
 # install dependencies
 RUN yarn install
