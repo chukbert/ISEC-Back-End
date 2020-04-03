@@ -53,7 +53,7 @@ deploy:
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - ssh $DEPLOYMENT_HOST "docker-compose down"
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && docker-compose down"
     - scp docker-compose-production.yml $DEPLOYMENT_HOST:~/isec-backend/docker-compose.yml
     - scp .env.example $DEPLOYMENT_HOST:~/isec-backend/.env.example
     - scp ./db/init.js $DEPLOYMENT_HOST:~/isec-backend/db/init.js
