@@ -37,7 +37,7 @@ build:
   before_script:
     - echo $CI_COMMIT_SHORT_SHA
     - docker build -t $DOCKER_HUB_USERNAME/isec-backend .
-    - docker tag $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
+    - docker tag $DOCKER_HUB_USERNAME/isec-backend $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
   script:
     - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
     - docker push $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
