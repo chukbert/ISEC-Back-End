@@ -32,7 +32,7 @@ services:
       SALTROUNDS: ${SALTROUNDS}
       WAIT_HOSTS: mongodb:27017
       WAIT_BEFORE_HOSTS: 10
-    command: sh -c "/wait && yarn start"
+    entrypoint: sh -c "/wait && yarn start"
     ports:
       - 17031:${NODE_PORT}
     networks:
