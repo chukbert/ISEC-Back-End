@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+  mongodb:
+    env_file: .env
+    image: mongo:4.2.3
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_USERNAME: ${MONGO_INITDB_USERNAME}
+      MONGO_INITDB_PASSWORD: ${MONGO_INITDB_PASSWORD}
+    volumes:
+      - ./db/init.sh:/docker-entrypoint-initdb.d/init.sh
+      - ./mongo-volume:/data/db
+    networks:
+      - local_ISEC
+
+  server:
+    env_file: .env
+    image: ${DOCKER_HUB_USERNAME}/isec-backend:${CI_COMMIT_SHORT_SHA}
+    container_name: server
+    depends_on:
+      - mongodb
+    environment:
+      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}
+      NODE_ENV: PRODUCTION
+      PORT: ${NODE_PORT}
+      JWTSECRET: ${JWTSECRET}
+      SALTROUNDS: ${SALTROUNDS}
+      WAIT_HOSTS: mongodb:27017
+      WAIT_BEFORE_HOSTS: 10
+    command: sh -c "/wait && yarn start"
+    ports:
+      - 17031:${NODE_PORT}
+    networks:
+      - local_ISEC
+
+networks:
+  local_ISEC:

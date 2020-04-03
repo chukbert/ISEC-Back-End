@@ -15,4 +15,4 @@ ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.2/wait
 RUN chmod +x /wait
 
 # Run the app when the container launches
-CMD [ "/wait", "&&", "yarn", "initdb", "&&", "yarn", "live" ]
+ENTRYPOINT [ "yarn", "start" ]

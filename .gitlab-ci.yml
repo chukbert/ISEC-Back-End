@@ -6,6 +6,7 @@
 stages:
   - lint
   # - test
+  - build
   - deploy
 
 # Cache downloaded dependencies and plugins between builds.
@@ -29,6 +30,18 @@ lint:
 
 # To deploy packages from CI, create a ci_settings.xml file
 # For `master` branch run `mvn deploy` automatically.
+build:
+  only:
+    - master
+  stage: build
+  before_script:
+    - echo $CI_COMMIT_SHORT_SHA
+    - docker build -t $DOCKER_HUB_USERNAME/isec-backend .
+    - docker tag $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
+  script:
+    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+    - docker push $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
+
 deploy:
   only:
     - master
@@ -40,4 +53,8 @@ deploy:
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && git fetch origin master && git reset --hard origin/master && docker-compose down && docker-compose up --build -d && docker system prune --volumes --force"
+    - ssh $DEPLOYMENT_HOST "docker-compose down"
+    - scp docker-compose-production.yml $DEPLOYMENT_HOST:~/isec-backend/docker-compose.yml
+    - scp .env.example $DEPLOYMENT_HOST:~/isec-backend/.env.example
+    - scp ./db/init.js $DEPLOYMENT_HOST:~/isec-backend/db/init.js
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA docker-compose up -d && docker system prune --volumes --force"
