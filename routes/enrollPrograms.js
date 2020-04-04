@@ -68,7 +68,6 @@ router.get('/:id/courses/:courseid', auth, (req, res) => {
 
 // POST /enrollprograms/new/:id
 // :id itu id_program
-// body : user_id
 router.post('/new/:id', auth, (req, res) => {
   db.Program.findById(req.params.id).populate('list_course.course_id').exec((errProgram, resultProgram) => {
     if (errProgram) {
@@ -148,7 +147,7 @@ router.post('/new/:id', auth, (req, res) => {
 
 // Buat enroll course, (status course 0 -> 1)
 // PATCH enrollprograms/enroll/:program_id/
-// body : user_id, course_id
+// body : course_id
 router.patch('/enroll/:program_id/', auth, (req, res) => {
   const programId = req.params.program_id;
   const userId = req.id;
@@ -175,7 +174,7 @@ router.patch('/enroll/:program_id/', auth, (req, res) => {
 
 // Buat start topic, (status topic 0 -> 1)
 // PATCH enrollprograms/start_topic/:program_id/
-// body : user_id, course_id, topic_id
+// body : course_id, topic_id
 router.patch('/start_topic/:program_id/', auth, (req, res) => {
   // let program_id = req.params.program_id;
   const studentId = req.id;
@@ -196,7 +195,7 @@ router.patch('/start_topic/:program_id/', auth, (req, res) => {
 // Buat finish topic(1->2) kalau semua topic finish, update status course (1 -> 2)
 // Kalau prereq course terpenuhi, update status course (-1 -> 0)
 // PATCH enrollprograms/finish/:program_id/
-// body : user_id, topic_id, course_id
+// body : topic_id, course_id
 router.patch('/finish/:program_id/', auth, (req, res) => {
   const programId = req.params.program_id;
 
