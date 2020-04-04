@@ -176,7 +176,7 @@ router.post('/auth', auth, (req, res) => {
 
 router.patch('/edit', auth, (req, res) => {
   const {
-    username, email, password
+    username, email, password,
   } = req.body;
   db.Student.findById(req.id, (errStudent, resultStudent) => {
     if (errStudent) {
