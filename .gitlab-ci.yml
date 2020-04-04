@@ -38,7 +38,7 @@ build:
     - echo $CI_COMMIT_SHORT_SHA
     - docker build -t $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA .
   script:
-    - echo "$MY_PASSWORD" | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+    - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
     - docker push $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
 
 deploy:
