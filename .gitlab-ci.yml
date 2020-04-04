@@ -57,8 +57,8 @@ deploy:
     - scp docker-compose-production.yml $DEPLOYMENT_HOST:~/isec-backend/docker-compose.yml
     - scp .env.example $DEPLOYMENT_HOST:~/isec-backend/.env.example
     - scp ./db/init.js $DEPLOYMENT_HOST:~/isec-backend/db/init.js
-    - ssh $DEPLOYMENT_HOST "export DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME"
-    - ssh $DEPLOYMENT_HOST "export CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA"
+    - ssh $DEPLOYMENT_HOST "bash -c (export DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME)"
+    - ssh $DEPLOYMENT_HOST "bash -c (export CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA)"
     - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && docker-compose up -d"
     - ssh $DEPLOYMENT_HOST "docker container prune -f"
     - ssh $DEPLOYMENT_HOST 
