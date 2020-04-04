@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 const express = require('express');
 const auth = require('../middleware/auth');
 const db = require('../db/models');
@@ -168,6 +169,52 @@ router.post('/auth', auth, (req, res) => {
         }
       });
     } else {
+      res.json({ success: true, username: resultStudent.username, role: resultStudent.role });
+    }
+  });
+});
+
+router.patch('/edit', auth, (req, res) => {
+  const {
+    username, email, password
+  } = req.body;
+  db.Student.findById(req.id, (errStudent, resultStudent) => {
+    if (errStudent) {
+      res.json({ success: false, error: errStudent });
+    } else if (!resultStudent) {
+      db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
+        if (errTeacher) {
+          res.json({ success: false, error: errTeacher });
+        } else if (!resultTeacher) {
+          db.Admin.findByIdAndUpdate(req.id, req.body, { new: true }, (errAdmin, resultAdmin) => {
+            if (errAdmin) {
+              res.json({ success: false, error: errAdmin });
+            } else if (!resultAdmin) {
+              res.json({ success: false, error: 'Wrong Token' });
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              if (username) resultAdmin.username = username;
+              if (email) resultAdmin.email = email;
+              if (password) resultAdmin.password = password;
+              resultAdmin.save();
+              res.json({ success: true, username: resultAdmin.username, role: resultAdmin.role });
+            }
+          });
+        } else {
+          // eslint-disable-next-line no-param-reassign
+          if (username) resultTeacher.username = username;
+          if (email) resultTeacher.email = email;
+          if (password) resultTeacher.password = password;
+          resultTeacher.save();
+          res.json({ success: true, username: resultTeacher.username, role: resultTeacher.role });
+        }
+      });
+    } else {
+      // eslint-disable-next-line no-param-reassign
+      if (username) resultStudent.username = username;
+      if (email) resultStudent.email = email;
+      if (password) resultStudent.password = password;
+      resultStudent.save();
       res.json({ success: true, username: resultStudent.username, role: resultStudent.role });
     }
   });
