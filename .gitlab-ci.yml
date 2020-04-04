@@ -57,10 +57,12 @@ deploy:
     - scp docker-compose-production.yml $DEPLOYMENT_HOST:~/isec-backend/docker-compose.yml
     - scp .env.example $DEPLOYMENT_HOST:~/isec-backend/.env.example
     - scp ./db/init.js $DEPLOYMENT_HOST:~/isec-backend/db/init.js
-    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA docker-compose up -d"
+    - ssh $DEPLOYMENT_HOST "export DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME"
+    - ssh $DEPLOYMENT_HOST "export CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA"
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && docker-compose up -d"
     - ssh $DEPLOYMENT_HOST "docker container prune -f"
     - ssh $DEPLOYMENT_HOST 
-        'for diru in `docker images '"$DOCKER_HUB_USERNAME"'*/* --format "{{.Repository}}" | sort | uniq`; do
+        'for diru in `docker images $DOCKER_HUB_USERNAME*/* --format "{{.Repository}}" | sort | uniq`; do
           for dimr in `docker images --format "{{.ID}};{{.Repository}}:{{.Tag}};{{.CreatedAt}}" --filter reference="$diru" | sed -r "s/\s+/~/g" | tail -n+3`; do 
             img_tag=`echo $dimr | cut -d";" -f2`; 
             docker rmi $img_tag;
