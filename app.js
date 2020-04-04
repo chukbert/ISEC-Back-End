@@ -11,7 +11,6 @@ const topicsRouter = require('./routes/topics');
 const coursesRouter = require('./routes/courses');
 const programsRouter = require('./routes/programs');
 const enrollProgramsRouter = require('./routes/enrollPrograms');
-const studentsRouter = require('./routes/students');
 
 
 const app = express();
@@ -31,6 +30,5 @@ app.use('/topics', topicsRouter);
 app.use('/courses', coursesRouter);
 app.use('/programs', programsRouter);
 app.use('/enrollprograms', enrollProgramsRouter);
-app.use('/students', studentsRouter);
 
 module.exports = app;
