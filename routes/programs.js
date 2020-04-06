@@ -1,3 +1,6 @@
+/* eslint-disable object-curly-newline */
+/* eslint-disable no-trailing-spaces */
+/* eslint-disable max-len */
 const express = require('express');
 const auth = require('../middleware/auth');
 
@@ -167,6 +170,67 @@ router.delete('/teacher/:id', auth, (req, res) => {
                   },
                 );
               }
+            },
+          );
+        });
+      }
+    });
+  }
+});
+
+router.post('/course/:id', auth, (req, res) => {
+  if (req.id == null) {
+    res.json({ success: false, error: 'Need Authentication Header' });
+  } else {
+    db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
+      if (errAdmin) {
+        res.json({ success: false, error: errAdmin });
+      } else if (!resultAdmin) {
+        db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
+          if (errTeacher) {
+            res.json({ success: false, error: errTeacher });
+          } else if (!resultTeacher) {
+            res.json({ success: false, error: 'Admin/Teacher not found' });
+          } else {
+            // add course
+            // eslint-disable-next-line object-curly-newline
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line object-curly-newline
+            new db.Course({ name: req.body.name,
+              code: req.body.code,
+              description: req.body.description }).save((errCourse, savedCourse) => {
+              if (errCourse) { res.json({ success: false, error: errCourse }); }
+              db.Program.findByIdAndUpdate(
+                req.params.id,
+                { $push: { list_course: { course_id: savedCourse.id } } },
+                {
+                  useFindAndModify: false,
+                  new: true,
+                },
+                (errProgram) => {
+                  if (errProgram) { res.json({ success: false, error: errProgram }); }
+                },
+              );
+            });
+          }
+        });
+      } else {
+        // add course
+        // eslint-disable-next-line object-curly-newline
+        new db.Course({ 
+          name: req.body.name,
+          code: req.body.code,
+          description: req.body.description }).save((errCourse, savedCourse) => {
+          if (errCourse) { res.json({ success: false, error: errCourse, type: 'course' }); return; }
+          db.Program.findByIdAndUpdate(
+            req.params.id,
+            { $push: { list_course: { course_id: savedCourse.id } } },
+            {
+              useFindAndModify: false,
+              new: true,
+            },
+            (errProgram) => {
+              if (errProgram) { res.json({ success: false, error: errProgram, type: 'program' }); }
             },
           );
         });
