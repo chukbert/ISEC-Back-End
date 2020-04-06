@@ -36,9 +36,9 @@ build:
   stage: build
   before_script:
     - echo $CI_COMMIT_SHORT_SHA
-    - docker build -t $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA .
   script:
-    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+    - docker build -t $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA .
+    - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
     - docker push $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
 
 deploy:
@@ -52,12 +52,13 @@ deploy:
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && docker-compose down"
+    - ssh $DEPLOYMENT_HOST "mkdir -p ~/isec-backend"
+    - ssh $DEPLOYMENT_HOST "mkdir -p ~/isec-backend/db"
     - scp docker-compose-production.yml $DEPLOYMENT_HOST:~/isec-backend/docker-compose.yml
     - scp .env.example $DEPLOYMENT_HOST:~/isec-backend/.env.example
     - scp ./db/init.js $DEPLOYMENT_HOST:~/isec-backend/db/init.js
+    - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && docker-compose down"
     - ssh $DEPLOYMENT_HOST "cd ~/isec-backend && DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA docker-compose up -d"
     - ssh $DEPLOYMENT_HOST "docker container prune -f"
     - ssh $DEPLOYMENT_HOST "docker volume prune -f"
-    - ssh $DEPLOYMENT_HOST 'DOCKER_HUB_USERNAME='"$DOCKER_HUB_USERNAME"'; for diru in $(docker images $DOCKER_HUB_USERNAME*/* --format "{{.Repository}}" | sort | uniq); do for dimr in $(docker images --format "{{.ID}};{{.Repository}}:{{.Tag}};{{.CreatedAt}}" --filter=reference="$diru:*" | sed -r "s/\s+/~/g" | tail -n+4); do img_tag=$(echo "$dimr" | cut -d";" -f2); docker rmi "$img_tag"; done done'
-
+    - ssh $DEPLOYMENT_HOST 'DOCKER_HUB_USERNAME='"$DOCKER_HUB_USERNAME"'; for diru in $(docker images $DOCKER_HUB_USERNAME/isec-backend --format "{{.Repository}}" | sort | uniq); do for dimr in $(docker images --format "{{.ID}};{{.Repository}}:{{.Tag}};{{.CreatedAt}}" --filter=reference="$diru:*" | sed -r "s/\s+/~/g" | tail -n+4); do img_tag=$(echo "$dimr" | cut -d";" -f2); docker rmi "$img_tag"; done done'
