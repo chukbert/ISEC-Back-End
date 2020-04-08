@@ -162,13 +162,73 @@ router.patch('/enroll/:program_id/', auth, (req, res) => {
         program_id: programId,
         'courses.course_id': courseId,
       },
-      { $set: { 'courses.$.status_course': 1 } },
+      { $set: { 'courses.$.status_course': 1, 'courses.$.topics.$[].status_topic': 0 } },
       (errEnrollCourse) => {
-        if (errEnrollCourse) { res.json({ success: false, error: errEnrollCourse }); return; }
-
+        if (errEnrollCourse) { res.json({ success: false, error: errEnrollCourse }); }
         res.json({ success: true });
       },
     );
+  });
+});
+
+// Buat fail course, (status course -> -2), must be teacher or admin
+// PATCH enrollprograms/fail/:program_id/
+// body : course_id, student_id
+router.patch('/fail/:program_id/', auth, (req, res) => {
+  const programId = req.params.program_id;
+  const studentId = req.body.student_id;
+  const courseId = req.body.course_id;
+
+  db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
+    if (errAdmin) {
+      res.json({ success: false, error: errAdmin });
+    } else if (!resultAdmin) {
+      db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
+        if (errTeacher) {
+          res.json({ success: false, error: errTeacher });
+        } else if (!resultTeacher) {
+          res.json({ success: false, error: 'Admin/Teacher not found' });
+        } else {
+          db.Student.findOne({ _id: studentId }, (errFindStudentForEnroll, student) => {
+            if (errFindStudentForEnroll) return;
+            db.EnrollProgram.findOneAndUpdate(
+              {
+                user_id: student.id,
+                program_id: programId,
+                'courses.course_id': courseId,
+              },
+              { $set: { 'courses.$.status_course': -2 } },
+              (errEnrollCourse) => {
+                if (errEnrollCourse) {
+                  res.json({ success: false, error: errEnrollCourse });
+                  return;
+                }
+                res.json({ success: true });
+              },
+            );
+          });
+        }
+      });
+    } else {
+      db.Student.findOne({ _id: studentId }, (errFindStudentForEnroll, student) => {
+        if (errFindStudentForEnroll) return;
+        db.EnrollProgram.findOneAndUpdate(
+          {
+            user_id: student.id,
+            program_id: programId,
+            'courses.course_id': courseId,
+          },
+          { $set: { 'courses.$.status_course': -2 } },
+          (errEnrollCourse) => {
+            if (errEnrollCourse) {
+              res.json({ success: false, error: errEnrollCourse });
+              return;
+            }
+            res.json({ success: true });
+          },
+        );
+      });
+    }
   });
 });
 
