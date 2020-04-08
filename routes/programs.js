@@ -200,6 +200,8 @@ router.post('/course/:id', auth, (req, res) => {
               code: req.body.code,
               description: req.body.description }).save((errCourse, savedCourse) => {
               if (errCourse) { res.json({ success: false, error: errCourse }); }
+              
+              // eslint-disable-next-line prefer-const
               db.Program.findByIdAndUpdate(
                 req.params.id,
                 { $push: { list_course: { course_id: savedCourse.id } } },
@@ -208,7 +210,26 @@ router.post('/course/:id', auth, (req, res) => {
                   new: true,
                 },
                 (errProgram) => {
-                  if (errProgram) { res.json({ success: false, error: errProgram }); }
+                  if (errProgram) { res.json({ success: false, error: errProgram, type: 'program' }); return; }
+                  
+                  if (req.body.prerequisite) {
+                    for (let i = 0; i < req.body.prerequisite.length; i += 1) {
+                      db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
+                        if (errCourseCode) return;
+                        db.Program.findOneAndUpdate({ 
+                          _id: req.params.id,
+                          'list_course.course_id': savedCourse.id,
+                        }, {
+                          $push: { 'list_course.$.prerequisite': resultCode.id },
+                        }, {
+                          useFindAndModify: false,
+                          new: true,
+                        },
+                        () => {});
+                      });
+                    }
+                  }
+                  res.json({ success: true });
                 },
               );
             });
@@ -222,6 +243,7 @@ router.post('/course/:id', auth, (req, res) => {
           code: req.body.code,
           description: req.body.description }).save((errCourse, savedCourse) => {
           if (errCourse) { res.json({ success: false, error: errCourse, type: 'course' }); return; }
+          
           db.Program.findByIdAndUpdate(
             req.params.id,
             { $push: { list_course: { course_id: savedCourse.id } } },
@@ -230,9 +252,119 @@ router.post('/course/:id', auth, (req, res) => {
               new: true,
             },
             (errProgram) => {
-              if (errProgram) { res.json({ success: false, error: errProgram, type: 'program' }); }
+              if (errProgram) { res.json({ success: false, error: errProgram, type: 'program' }); return; }
+              
+              if (req.body.prerequisite) {
+                for (let i = 0; i < req.body.prerequisite.length; i += 1) {
+                  db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
+                    if (errCourseCode) return;
+                    db.Program.findOneAndUpdate({ 
+                      _id: req.params.id,
+                      'list_course.course_id': savedCourse.id,
+                    }, {
+                      $push: { 'list_course.$.prerequisite': resultCode.id },
+                    }, {
+                      useFindAndModify: false,
+                      new: true,
+                    },
+                    () => {});
+                  });
+                }
+              }
+              res.json({ success: true });
             },
           );
+        });
+      }
+    });
+  }
+});
+
+router.patch('/setprereq/:id', auth, (req, res) => {
+  if (req.id == null) {
+    res.json({ success: false, error: 'Need Authentication Header' });
+  } else {
+    db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
+      if (errAdmin) {
+        res.json({ success: false, error: errAdmin });
+      } else if (!resultAdmin) {
+        db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
+          if (errTeacher) {
+            res.json({ success: false, error: errTeacher });
+          } else if (!resultTeacher) {
+            res.json({ success: false, error: 'Admin/Teacher not found' });
+          } else {
+            // edit course
+            db.Course.findOne({ code: req.body.course }, (errCourse, resCourse) => {
+              if (errCourse) { res.json({ success: false, nb: 'code course not found' }); return; }
+              db.Program.findOneAndUpdate({ 
+                _id: req.params.id,
+                'list_course.course_id': resCourse.id,
+              }, {
+                $set: { 'list_course.$.prerequisite': [] },
+              }, {
+                useFindAndModify: false,
+                new: true,
+              },
+              (errProgram, resProgram) => {
+                if (errProgram) { res.json({ success: false, error: errProgram }); return; }
+                if (req.body.prerequisite) {
+                  for (let i = 0; i < req.body.prerequisite.length; i += 1) {
+                    db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
+                      if (errCourseCode) return;
+                      db.Program.findOneAndUpdate({ 
+                        _id: resProgram.id,
+                        'list_course.course_id': resCourse.id,
+                      }, {
+                        $push: { 'list_course.$.prerequisite': resultCode.id },
+                      }, {
+                        useFindAndModify: false,
+                        new: true,
+                      },
+                      () => {});
+                    });
+                  }
+                }
+                res.json({ success: true, note: 'prerequisites updated' });
+              });
+            });
+          }
+        });
+      } else {
+        // edit prereq course
+        // eslint-disable-next-line object-curly-newline
+        db.Course.findOne({ code: req.body.course }, (errCourse, resCourse) => {
+          if (errCourse) { res.json({ success: false, nb: 'code course not found' }); return; }
+          db.Program.findOneAndUpdate({ 
+            _id: req.params.id,
+            'list_course.course_id': resCourse.id,
+          }, {
+            $set: { 'list_course.$.prerequisite': [] },
+          }, {
+            useFindAndModify: false,
+            new: true,
+          },
+          (errProgram, resProgram) => {
+            if (errProgram) { res.json({ success: false, error: errProgram }); return; }
+            if (req.body.prerequisite) {
+              for (let i = 0; i < req.body.prerequisite.length; i += 1) {
+                db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
+                  if (errCourseCode) return;
+                  db.Program.findOneAndUpdate({ 
+                    _id: resProgram.id,
+                    'list_course.course_id': resCourse.id,
+                  }, {
+                    $push: { 'list_course.$.prerequisite': resultCode.id },
+                  }, {
+                    useFindAndModify: false,
+                    new: true,
+                  },
+                  () => {});
+                });
+              }
+            }
+            res.json({ success: true, note: 'prerequisites updated' });
+          });
         });
       }
     });
