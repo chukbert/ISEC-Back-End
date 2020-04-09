@@ -24,9 +24,9 @@ const db = require('../db/models');
 router.get('/', auth, (req, res) => {
   db.EnrollProgram.find({ user_id: req.id }).lean().exec()
     .then((val) => {
-      res.json({ data: val, success: !!val });
+      res.status(200).json({ data: val, success: !!val });
     }, (err) => {
-      res.json({ success: false, error: err });
+      res.status(500).json({ success: false, error: err });
     });
 });
 
@@ -38,9 +38,9 @@ router.get('/:id', auth, (req, res) => {
     .lean()
     .exec()
     .then((val) => {
-      res.json({ data: val, success: !!val });
+      res.status(200).json({ data: val, success: !!val });
     }, (err) => {
-      res.json({ success: false, error: err });
+      res.status(500).json({ success: false, error: err });
     });
 });
 
@@ -55,14 +55,14 @@ router.get('/:id/courses/:courseid', auth, (req, res) => {
       while (i < val.courses.length) {
         // eslint-disable-next-line no-underscore-dangle
         if (val.courses[i].course_id._id.toString() === req.params.courseid.toString()) {
-          res.json({ data: val.courses[i], success: !!val });
+          res.status(200).json({ data: val.courses[i], success: !!val });
           return;
         }
         i += 1;
       }
-      res.json({ error: 'Course not found', success: false });
+      res.status(404).json({ error: 'Course not found', success: false });
     }, (err) => {
-      res.json({ success: false, error: err });
+      res.status(500).json({ success: false, error: err });
     });
 });
 
@@ -71,16 +71,16 @@ router.get('/:id/courses/:courseid', auth, (req, res) => {
 router.post('/new/:id', auth, (req, res) => {
   db.Program.findById(req.params.id).populate('list_course.course_id').exec((errProgram, resultProgram) => {
     if (errProgram) {
-      res.json({ success: false, error: errProgram });
+      res.status(500).json({ success: false, error: errProgram });
     } else if (!resultProgram) {
-      res.json({ success: false, error: 'Program not found' });
+      res.status(404).json({ success: false, error: 'Program not found' });
     } else {
       new db.EnrollProgram({
         program_id: resultProgram.id,
         user_id: req.id,
         status_program: 1,
       }).save((err, saved) => {
-        if (err) { res.json({ success: false, error: err }); return; }
+        if (err) { res.status(500).json({ success: false, error: err }); return; }
         // console.log(resultProgram);
         for (let i = 0; i < resultProgram.list_course.length; i += 1) {
           let len = resultProgram.list_course[i].prerequisite.length;
@@ -103,7 +103,7 @@ router.post('/new/:id', auth, (req, res) => {
               new: true,
             },
             (errUpdate) => {
-              if (errUpdate) { res.json({ success: false, error: errUpdate }); return; }
+              if (errUpdate) { res.status(500).json({ success: false, error: errUpdate }); return; }
               const sizeListCourse = resultProgram.list_course[i].course_id.list_topic.length;
               for (let j = 0; j < sizeListCourse; j += 1) {
                 db.EnrollProgram.findOneAndUpdate(
@@ -122,7 +122,7 @@ router.post('/new/:id', auth, (req, res) => {
                   { useFindAndModify: false },
                   (errUpdateEnrollCourse) => {
                     if (errUpdateEnrollCourse) {
-                      res.json({ success: false, error: errUpdateEnrollCourse });
+                      res.status(500).json({ success: false, error: errUpdateEnrollCourse });
                     }
                   },
                 );
@@ -135,9 +135,11 @@ router.post('/new/:id', auth, (req, res) => {
           { $push: { enrollprogram_id: saved.id } },
           { useFindAndModify: false },
           (errStudentFind) => {
-            if (errStudentFind) { res.json({ success: false, error: errStudentFind }); return; }
-
-            res.json({ success: true, id: saved.id, user_id: saved.user_id });
+            if (errStudentFind) {
+              res.status(500).json({ success: false, error: errStudentFind });
+              return;
+            }
+            res.status(200).json({ success: true, id: saved.id, user_id: saved.user_id });
           },
         );
       });
@@ -164,8 +166,8 @@ router.patch('/enroll/:program_id/', auth, (req, res) => {
       },
       { $set: { 'courses.$.status_course': 1, 'courses.$.topics.$[].status_topic': 0 } },
       (errEnrollCourse) => {
-        if (errEnrollCourse) { res.json({ success: false, error: errEnrollCourse }); }
-        res.json({ success: true });
+        if (errEnrollCourse) { res.status(500).json({ success: false, error: errEnrollCourse }); }
+        res.status(200).json({ success: true });
       },
     );
   });
@@ -181,13 +183,13 @@ router.patch('/fail/:program_id/', auth, (req, res) => {
 
   db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
     if (errAdmin) {
-      res.json({ success: false, error: errAdmin });
+      res.status(500).json({ success: false, error: errAdmin });
     } else if (!resultAdmin) {
       db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
         if (errTeacher) {
-          res.json({ success: false, error: errTeacher });
+          res.status(500).json({ success: false, error: errTeacher });
         } else if (!resultTeacher) {
-          res.json({ success: false, error: 'Admin/Teacher not found' });
+          res.status(401).json({ success: false, error: 'Admin/Teacher not found' });
         } else {
           db.Student.findOne({ _id: studentId }, (errFindStudentForEnroll, student) => {
             if (errFindStudentForEnroll) return;
@@ -200,10 +202,10 @@ router.patch('/fail/:program_id/', auth, (req, res) => {
               { $set: { 'courses.$.status_course': -2 } },
               (errEnrollCourse) => {
                 if (errEnrollCourse) {
-                  res.json({ success: false, error: errEnrollCourse });
+                  res.status(500).json({ success: false, error: errEnrollCourse });
                   return;
                 }
-                res.json({ success: true });
+                res.status(200).json({ success: true });
               },
             );
           });
@@ -221,10 +223,10 @@ router.patch('/fail/:program_id/', auth, (req, res) => {
           { $set: { 'courses.$.status_course': -2 } },
           (errEnrollCourse) => {
             if (errEnrollCourse) {
-              res.json({ success: false, error: errEnrollCourse });
+              res.status(500).json({ success: false, error: errEnrollCourse });
               return;
             }
-            res.json({ success: true });
+            res.status(200).json({ success: true });
           },
         );
       });
@@ -246,8 +248,8 @@ router.patch('/start_topic/:program_id/', auth, (req, res) => {
     { $set: { 'courses.$[outer].topics.$[inner].status_topic': 1 } },
     { arrayFilters: [{ 'outer.course_id': courseId }, { 'inner.topic_id': topicId }] },
     (errStartTopic) => {
-      if (errStartTopic) { res.json({ success: false, error: errStartTopic }); return; }
-      res.json({ success: true });
+      if (errStartTopic) { res.status(500).json({ success: false, error: errStartTopic }); return; }
+      res.status(200).json({ success: true });
     },
   );
 });
@@ -260,20 +262,20 @@ router.patch('/finish/:program_id/', auth, (req, res) => {
   const programId = req.params.program_id;
 
   db.Student.findOne({ _id: req.id }, (errStudent, student) => {
-    if (errStudent) { res.json({ success: false, error: errStudent }); return; }
-    if (!student) { res.json({ success: false, error: 'No Student' }); return; }
+    if (errStudent) { res.status(500).json({ success: false, error: errStudent }); return; }
+    if (!student) { res.status(404).json({ success: false, error: 'No Student' }); return; }
     db.Topic.findOne({ _id: req.body.topic_id }, (errTopic, topic) => {
-      if (errTopic) { res.json({ success: false, error: errTopic }); return; }
-      if (!topic) { res.json({ success: false, error: 'No Topic' }); return; }
+      if (errTopic) { res.status(500).json({ success: false, error: errTopic }); return; }
+      if (!topic) { res.status(404).json({ success: false, error: 'No Topic' }); return; }
       db.Course.findOne({ _id: req.body.course_id }, (errCourse, course) => {
-        if (errCourse) { res.json({ success: false, error: errCourse }); return; }
-        if (!course) { res.json({ success: false, error: 'No Course' }); return; }
+        if (errCourse) { res.status(500).json({ success: false, error: errCourse }); return; }
+        if (!course) { res.status(404).json({ success: false, error: 'No Course' }); return; }
         db.EnrollProgram.findOneAndUpdate(
           { user_id: student.id },
           { $set: { 'courses.$[outer].topics.$[inner].status_topic': 2 } },
           { arrayFilters: [{ 'outer.course_id': course.id }, { 'inner.topic_id': topic.id }] },
           (errEnroll) => {
-            if (errEnroll) { res.json({ success: false, error: errEnroll }); return; }
+            if (errEnroll) { res.status(500).json({ success: false, error: errEnroll }); return; }
 
             db.EnrollProgram.findOne(
               {
@@ -333,7 +335,7 @@ router.patch('/finish/:program_id/', auth, (req, res) => {
                             },
                             (errUpdateProgram) => {
                               if (errUpdateProgram) {
-                                res.json({ success: false, error: errUpdateProgram });
+                                res.status(500).json({ success: false, error: errUpdateProgram });
                               }
                             },
                           );
@@ -381,7 +383,10 @@ router.patch('/finish/:program_id/', auth, (req, res) => {
                                     },
                                     (errUpdateCourse) => {
                                       if (errUpdateCourse) {
-                                        res.json({ success: false, error: errUpdateCourse });
+                                        res.status(500).json({
+                                          success: false,
+                                          error: errUpdateCourse,
+                                        });
                                       }
                                     },
                                   );
@@ -397,7 +402,7 @@ router.patch('/finish/:program_id/', auth, (req, res) => {
             );
           },
         );
-        res.json({ success: true, status_topic: 2 });
+        res.status(200).json({ success: true, status_topic: 2 });
       });
     });
   });
@@ -413,12 +418,15 @@ router.delete('/delete/:id', auth, (req, res) => {
         { $pull: { enrollprogram_id: result.id } },
         { useFindAndModify: false },
         (errStudentFind) => {
-          if (errStudentFind) { res.json({ success: false, error: errStudentFind }); return; }
-          res.json({ success: true, deleted: result.id });
+          if (errStudentFind) {
+            res.status(500).json({ success: false, error: errStudentFind });
+            return;
+          }
+          res.status(200).json({ success: true, deleted: result.id });
         },
       );
     },
-  ).catch((err) => res.json({ success: false, error: err }));
+  ).catch((err) => res.status(500).json({ success: false, error: err }));
 });
 
 module.exports = router;
