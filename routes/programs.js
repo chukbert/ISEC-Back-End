@@ -42,7 +42,7 @@ router.post('/new', auth, (req, res) => {
       } else if (!resultAdmin) {
         res.status(404).json({ success: false, error: 'Admin not found' });
       } else {
-        new db.Program(req.body).save((err, saved) => {
+        new db.Program(req.body).save((err, saved) => { 
           if (err) { res.status(500).json({ success: false, error: err }); return; }
           db.Admin.findByIdAndUpdate(
             req.id,
@@ -51,8 +51,11 @@ router.post('/new', auth, (req, res) => {
               useFindAndModify: false,
               new: true,
             },
-          );
-          res.status(200).json({ success: true, id: saved.id });
+            (errAdminProgram) => {
+              if (errAdminProgram) { res.status(500).json({ success: false, error: errAdminProgram }); return; }
+              res.status(200).json({ success: true, id: saved.id });
+            },
+          ); 
         });
       }
     });
@@ -70,8 +73,8 @@ router.patch('/edit/:id', auth, (req, res) => {
         res.status(404).json({ success: false, error: 'Admin not found' });
       } else {
         const { id } = req.params;
-        db.Program.updateOne(
-          { _id: id }, req.body, (err) => {
+        db.Program.findByIdAndUpdate(
+          id, req.body, (err) => {
             if (err) { res.status(500).json({ success: false, error: err }); return; }
             res.status(200).json({ success: true });
           },
@@ -94,7 +97,7 @@ router.delete('/delete/:id', auth, (req, res) => {
         const { id } = req.params;
         db.Program.deleteOne({ _id: id }).exec().then(
           () => {
-            db.Admin.updateOne({ _id: req.id }, { $pull: { program_id: id } }).exec().then(
+            db.Admin.findByIdAndUpdate(req.id, { $pull: { program_id: id } }).exec().then(
               () => {
                 res.status(200).json({ success: true });
               },
@@ -127,7 +130,7 @@ router.post('/teacher/:id', auth, (req, res) => {
               if (errTeacher) {
                 res.status(500).json({ success: false, error: errTeacher });
               } else {
-                db.Program.updateOne(
+                db.Program.findOneAndUpdate(
                   { _id: id },
                   { $push: { list_teacher: resultTeacher.id } },
                   (errProgram) => {
@@ -165,8 +168,8 @@ router.delete('/teacher/:id', auth, (req, res) => {
               if (errTeacher) {
                 res.status(500).json({ success: false, error: errTeacher });
               } else {
-                db.Program.updateOne(
-                  { _id: id },
+                db.Program.findByIdAndUpdate(
+                  id,
                   { $pull: { list_teacher: resultTeacher.id } },
                   (errProgram) => {
                     if (err) { res.status(500).json({ success: false, error: errProgram }); return; }
