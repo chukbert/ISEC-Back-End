@@ -1,10 +1,10 @@
 version: '3.7'
 
 services:
-  mongodb:
+  mongodb-test:
     env_file: .env.example
     image: mongo:4.2.3
-    container_name: mongodb
+    container_name: mongodb-test
     restart: always
     command: "mongod --smallfiles"
     environment:
@@ -16,19 +16,19 @@ services:
     networks:
       - local_ISEC_test
 
-  server:
+  server-test:
     env_file: .env.example
     image: ${DOCKER_HUB_USERNAME}/isec-backend:${CI_COMMIT_SHORT_SHA}
-    container_name: server
+    container_name: server-test
     depends_on:
-      - mongodb
+      - mongodb-test
     environment:
-      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}
+      DATABASE_URL: mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@mongodb-test:27017/${MONGO_INITDB_DATABASE}
       NODE_ENV: DEVELOPMENT
       PORT: ${NODE_PORT}
       JWTSECRET: ${JWTSECRET}
       SALTROUNDS: ${SALTROUNDS}
-      WAIT_HOSTS: mongodb:27017
+      WAIT_HOSTS: mongodb-test:27017
       WAIT_BEFORE_HOSTS: 10
     entrypoint: sh -c "/wait && yarn test"
     networks:
