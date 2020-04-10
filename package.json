@@ -7,7 +7,6 @@
     "live": "nodemon ./bin/www",
     "initdb": "node ./db/init.js",
     "lint": "eslint \"**/*.js\" --fix --ignore-pattern node_modules/",
-    "inittest": "node ./db/dummy.js",
     "test": "mocha ./tests/*.js --exit"
   },
   "dependencies": {

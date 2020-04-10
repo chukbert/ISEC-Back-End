@@ -5,8 +5,8 @@
 
 stages:
   - lint
-  # - test
   - build
+  - test
   - deploy
 
 # Cache downloaded dependencies and plugins between builds.
@@ -23,16 +23,9 @@ lint:
     - yarn install
     - yarn lint
 
-# test:
-#   stage: test
-#   script:
-#     - npm run test
-
 # To deploy packages from CI, create a ci_settings.xml file
 # For `master` branch run `mvn deploy` automatically.
 build:
-  only:
-    - master
   stage: build
   before_script:
     - echo $CI_COMMIT_SHORT_SHA
@@ -40,6 +33,12 @@ build:
     - docker build -t $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA .
     - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
     - docker push $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
+
+test:
+  stage: test
+  script:
+    - DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA docker-compose up -f docker-compose-test.yml --abort-on-container-exit
+    - docker-compose down -v --rmi all --remove-orphans
 
 deploy:
   only:
