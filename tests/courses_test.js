@@ -156,4 +156,39 @@ describe('Courses', () => {
         });
     });
   });
+
+  describe('POST courses/topic/:id', () => {
+    it('it should ADD topic to a course', (done) => {
+      const teacher = {
+        username: 't999',
+        email: 't999@t999.com',
+        password: 't999',
+        role: 1,
+      };
+      const topic = {
+        name: 'topic baru',
+      };
+      const course = new db.Course({
+        name: 'dummy course patch',
+        code: 'course100',
+        description: 'lorem ipsum',
+      });
+      chai.request(server)
+        .post('/users/register')
+        .send(teacher)
+        .end((errTeacher, resTeacher) => {
+          course.save((errSaveCourse, savedCourse) => {
+            chai.request(server)
+              .post(`/courses/topic/${savedCourse.id}`)
+              .set('Authorization', resTeacher.body.token)
+              .send(topic)
+              .end((err, res) => {
+                res.should.have.status(200);
+                res.body.should.have.property('success').eql(true);
+                done();
+              });
+          });
+        });
+    });
+  });
 });
