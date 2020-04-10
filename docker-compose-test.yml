@@ -5,6 +5,8 @@ services:
     env_file: .env
     image: mongo:4.2.3
     container_name: mongodb-test
+    volumes:
+      - ./db/init.sh:/docker-entrypoint-initdb.d/init.sh
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
