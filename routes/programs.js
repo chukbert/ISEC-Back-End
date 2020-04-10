@@ -53,7 +53,7 @@ router.post('/new', auth, (req, res) => {
             },
             (errAdminProgram) => {
               if (errAdminProgram) { res.status(500).json({ success: false, error: errAdminProgram }); return; }
-              res.status(200).json({ succes: true, id: saved.id });
+              res.status(200).json({ success: true, id: saved.id });
             },
           ); 
         });
