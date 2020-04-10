@@ -44,9 +44,13 @@ router.post('/new', auth, (req, res) => {
       } else {
         new db.Program(req.body).save((err, saved) => {
           if (err) { res.status(500).json({ success: false, error: err }); return; }
-          db.Admin.update(
-            { _id: req.id },
+          db.Admin.findByIdAndUpdate(
+            req.id,
             { $push: { program_id: saved.id } },
+            {
+              useFindAndModify: false,
+              new: true,
+            },
           );
           res.status(200).json({ success: true, id: saved.id });
         });
@@ -117,7 +121,7 @@ router.post('/teacher/:id', auth, (req, res) => {
           if (err) { res.status(500).json({ success: false, error: err }); return; }
           db.Teacher.findOneAndUpdate(
             { username: req.body.username },
-            { $pull: { programs: { program_id: result.id } } },
+            { $push: { programs: { program_id: result.id } } },
             { upsert: true },
             (errTeacher, resultTeacher) => {
               if (errTeacher) {

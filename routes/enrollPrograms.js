@@ -34,7 +34,14 @@ router.get('/:id', auth, (req, res) => {
   db.EnrollProgram.findOne({ program_id: req.params.id, user_id: req.id })
     .populate('courses.course_id')
     .populate('program_id')
-    .populate('program_id.list_teacher', 'username')
+    .populate({
+      path: 'program_id',
+      populate: {
+        path: 'list_teacher',
+        model: 'Teacher',
+        select: 'username',
+      },
+    })
     .populate('courses.prerequisite')
     .lean()
     .exec()
