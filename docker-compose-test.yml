@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   mongodb-test:
-    env_file: test.env
+    env_file: .env
     image: mongo:4.2.3
     container_name: mongodb-test
     restart: always
@@ -16,7 +16,7 @@ services:
       - local_ISEC_test
 
   server-test:
-    env_file: test.env
+    env_file: .env
     image: ${DOCKER_HUB_USERNAME}/isec-backend:${CI_COMMIT_SHORT_SHA}
     container_name: server-test
     depends_on:

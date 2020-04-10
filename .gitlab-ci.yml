@@ -11,9 +11,9 @@ stages:
 
 # Cache downloaded dependencies and plugins between builds.
 # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-# cache:
-#   paths:
-#     - node_modules
+cache:
+  paths:
+    - node_modules
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
@@ -37,6 +37,7 @@ build:
 test:
   stage: test
   script:
+    - cp ./.env.example ./.env
     - DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME CI_COMMIT_SHORT_SHA=$CI_COMMIT_SHORT_SHA docker-compose -f docker-compose-test.yml up --abort-on-container-exit
     - docker-compose -f docker-compose-test.yml down -v --remove-orphans
     - docker rmi $DOCKER_HUB_USERNAME/isec-backend:$CI_COMMIT_SHORT_SHA
