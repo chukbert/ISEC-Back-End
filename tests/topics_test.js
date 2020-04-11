@@ -69,7 +69,7 @@ describe('Topics', () => {
         });
     });
 
-    it('it should cannot POST a topic', (done) => {
+    it('it should not POST a topic', (done) => {
       const topic = {
         nama: 'unit-testing',
       };
@@ -99,7 +99,7 @@ describe('Topics', () => {
       });
     });
 
-    it('it should cannot UPDATE a topic given id not exist', (done) => {
+    it('it should not UPDATE a topic given id not exist', (done) => {
       chai.request(server)
         .patch('/topics/edit/idnotexist')
         .send({ name: 'Kombinatorika' })

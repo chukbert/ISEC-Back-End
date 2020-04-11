@@ -4,7 +4,7 @@ module.exports = function auth(req, res, next) {
   if (req.headers.authorization) {
     jwt.verify(req.headers.authorization, process.env.JWTSECRET, (error, decoded) => {
       if (error) {
-        res.json({ success: false, error });
+        res.status(500).json({ success: false, error });
       } else {
         req.id = decoded.id;
         next();
