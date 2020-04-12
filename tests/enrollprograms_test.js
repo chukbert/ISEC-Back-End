@@ -17,8 +17,8 @@ const {
 chai.use(chaiHttp);
 
 describe('Enroll Programs', async () => {
-  await mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
-    .catch();
+  // await mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
+  //   .catch();
 
   const student = await new Student({
     username: 'studenttest',
