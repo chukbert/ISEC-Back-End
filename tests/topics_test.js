@@ -13,7 +13,7 @@ const should = chai.should();
 
 chai.use(chaiHttp);
 
-describe('Topics', () => {
+describe('Topics', async () => {
   describe('/GET topics', () => {
     it('it should GET all the topics', (done) => {
       chai.request(server)
@@ -44,7 +44,6 @@ describe('Topics', () => {
     });
 
     it('it should not GET a topic because id not exist', (done) => {
-      const topic = new db.Topic({ name: 'dummy_topic' });
       chai.request(server)
         .get('/topics/indexnotfound')
         .end((errGet, res) => {
@@ -69,7 +68,7 @@ describe('Topics', () => {
         });
     });
 
-    it('it should cannot POST a topic', (done) => {
+    it('it should not POST a topic', (done) => {
       const topic = {
         nama: 'unit-testing',
       };
@@ -99,7 +98,7 @@ describe('Topics', () => {
       });
     });
 
-    it('it should cannot UPDATE a topic given id not exist', (done) => {
+    it('it should not UPDATE a topic given id not exist', (done) => {
       chai.request(server)
         .patch('/topics/edit/idnotexist')
         .send({ name: 'Kombinatorika' })

@@ -164,20 +164,27 @@ router.patch('/enroll/:program_id/', auth, (req, res) => {
   const courseId = req.body.course_id;
 
   db.Student.findOne({ _id: userId }, (errFindStudentForEnroll, student) => {
-    if (errFindStudentForEnroll) return;
-
-    db.EnrollProgram.findOneAndUpdate(
-      {
-        user_id: student.id,
-        program_id: programId,
-        'courses.course_id': courseId,
-      },
-      { $set: { 'courses.$.status_course': 1, 'courses.$.topics.$[].status_topic': 0 } },
-      (errEnrollCourse) => {
-        if (errEnrollCourse) { res.status(500).json({ success: false, error: errEnrollCourse }); }
-        res.status(200).json({ success: true });
-      },
-    );
+    if (errFindStudentForEnroll) {
+      res.status(500).json({ success: false, error: errFindStudentForEnroll });
+    } else if (!student) {
+      res.status(401).json({ success: false, error: 'Student not found' });
+    } else {
+      db.EnrollProgram.findOneAndUpdate(
+        {
+          user_id: student.id,
+          program_id: programId,
+          'courses.course_id': courseId,
+        },
+        { $set: { 'courses.$.status_course': 1, 'courses.$.topics.$[].status_topic': 0 } },
+        (errEnrollCourse) => {
+          if (errEnrollCourse) {
+            res.status(500).json({ success: false, error: errEnrollCourse });
+            return;
+          }
+          res.status(200).json({ success: true });
+        },
+      );
+    }
   });
 });
 
@@ -246,13 +253,18 @@ router.patch('/fail/:program_id/', auth, (req, res) => {
 // PATCH enrollprograms/start_topic/:program_id/
 // body : course_id, topic_id
 router.patch('/start_topic/:program_id/', auth, (req, res) => {
-  // let program_id = req.params.program_id;
   const studentId = req.id;
+  const programId = req.params.program_id;
   const courseId = req.body.course_id;
   const topicId = req.body.topic_id;
 
   db.EnrollProgram.findOneAndUpdate(
-    { user_id: studentId },
+    {
+      user_id: studentId,
+      program_id: programId,
+      'courses.course_id': courseId,
+      'courses.topics.topic_id': topicId,
+    },
     { $set: { 'courses.$[outer].topics.$[inner].status_topic': 1 } },
     { arrayFilters: [{ 'outer.course_id': courseId }, { 'inner.topic_id': topicId }] },
     (errStartTopic) => {
@@ -267,153 +279,170 @@ router.patch('/start_topic/:program_id/', auth, (req, res) => {
 // PATCH enrollprograms/finish/:program_id/
 // body : topic_id, course_id
 router.patch('/finish/:program_id/', auth, (req, res) => {
+  let studentId = req.id;
   const programId = req.params.program_id;
+  const courseId = req.body.course_id;
+  const topicId = req.body.topic_id;
 
-  db.Student.findOne({ _id: req.id }, (errStudent, student) => {
-    if (errStudent) { res.status(500).json({ success: false, error: errStudent }); return; }
-    if (!student) { res.status(404).json({ success: false, error: 'No Student' }); return; }
-    db.Topic.findOne({ _id: req.body.topic_id }, (errTopic, topic) => {
-      if (errTopic) { res.status(500).json({ success: false, error: errTopic }); return; }
-      if (!topic) { res.status(404).json({ success: false, error: 'No Topic' }); return; }
-      db.Course.findOne({ _id: req.body.course_id }, (errCourse, course) => {
-        if (errCourse) { res.status(500).json({ success: false, error: errCourse }); return; }
-        if (!course) { res.status(404).json({ success: false, error: 'No Course' }); return; }
-        db.EnrollProgram.findOneAndUpdate(
-          { user_id: student.id },
-          { $set: { 'courses.$[outer].topics.$[inner].status_topic': 2 } },
-          { arrayFilters: [{ 'outer.course_id': course.id }, { 'inner.topic_id': topic.id }] },
-          (errEnroll) => {
-            if (errEnroll) { res.status(500).json({ success: false, error: errEnroll }); return; }
+  db.Admin.findById(req.id, (errAdmin, resultAdmin) => {
+    if (errAdmin) {
+      res.status(500).json({ success: false, error: errAdmin });
+    } else if (!resultAdmin) {
+      db.Teacher.findById(req.id, (errTeacher, resultTeacher) => {
+        if (errTeacher) {
+          res.status(500).json({ success: false, error: errTeacher });
+        } else if (resultTeacher) {
+          studentId = req.params.studentId;
+        }
+      });
+    } else {
+      studentId = req.params.studentId;
+    }
+  });
+  db.EnrollProgram.findOneAndUpdate(
+    {
+      user_id: studentId,
+      program_id: programId,
+      'courses.course_id': courseId,
+      'courses.topics.topic_id': topicId,
+    },
+    { $set: { 'courses.$[outer].topics.$[inner].status_topic': 2 } },
+    { arrayFilters: [{ 'outer.course_id': courseId }, { 'inner.topic_id': topicId }] },
+    (errEnroll) => {
+      if (errEnroll) { res.status(500).json({ success: false, error: errEnroll }); return; }
 
-            db.EnrollProgram.findOne(
+      db.EnrollProgram.findOne(
+        {
+          user_id: studentId,
+          program_id: programId,
+        },
+        (err, enroll) => {
+          if (err) {
+            res.status(500).json({ success: false, error: errEnroll });
+            return;
+          }
+          let finished = true;
+          for (let i = 0; i < enroll.courses.length; i += 1) {
+            if (enroll.courses[i].course_id.toString() === courseId.toString()) {
+              let j = 0;
+              while (j < enroll.courses[i].topics.length && finished) {
+                if (enroll.courses[i].topics[j].status_topic !== 2) {
+                  finished = false;
+                }
+                j += 1;
+              }
+            }
+          }
+
+
+          if (finished) {
+            db.EnrollProgram.findOneAndUpdate(
               {
-                user_id: student.id,
+                user_id: studentId,
                 program_id: programId,
+                'courses.course_id': courseId,
               },
-              (err, enroll) => {
-                if (err) return;
-                let finished = true;
-                for (let i = 0; i < enroll.courses.length; i += 1) {
-                  if (enroll.courses[i].course_id.toString() === course.id.toString()) {
-                    let j = 0;
-                    while (j < enroll.courses[i].topics.length && finished) {
-                      if (enroll.courses[i].topics[j].status_topic !== 2) {
-                        finished = false;
-                      }
-                      j += 1;
+              { 'courses.$.status_course': 2 },
+              {
+                useFindAndModify: false,
+                new: true,
+              },
+            )
+              .populate('program_id')
+              .populate('program_id.list_course.course_id').exec(
+                (errFinishCourse, resultEnroll) => {
+                  if (errFinishCourse) {
+                    res.status(500).json({ success: false, error: errFinishCourse });
+                    return;
+                  }
+                  // Buat update kalo program sudah selesai (semua status_course = 2 )
+                  let programFinish = true;
+                  for (let i = 0; i < resultEnroll.courses.length; i += 1) {
+                    if (resultEnroll.courses[i].status_course !== 2) {
+                      programFinish = false;
                     }
                   }
-                }
-
-
-                if (finished) {
-                  db.EnrollProgram.findOneAndUpdate(
-                    {
-                      user_id: student.id,
-                      program_id: programId,
-                      'courses.course_id': course.id,
-                    },
-                    { 'courses.$.status_course': 2 },
-                    {
-                      useFindAndModify: false,
-                      new: true,
-                    },
-                  )
-                    .populate('program_id')
-                    .populate('program_id.list_course.course_id').exec(
-                      (errFinishCourse, resultEnroll) => {
-                        if (errFinishCourse) return;
-                        // Buat update kalo program sudah selesai (semua status_course = 2 )
-                        let programFinish = true;
-                        for (let i = 0; i < resultEnroll.courses.length; i += 1) {
-                          if (resultEnroll.courses[i].status_course !== 2) {
-                            programFinish = false;
-                          }
-                        }
-                        if (programFinish) {
-                          db.EnrollProgram.findOneAndUpdate(
-                            {
-                              user_id: student.id,
-                              program_id: programId,
-                            },
-                            { $set: { status_program: 2 } },
-                            {
-                              useFindAndModify: false,
-                              new: true,
-                            },
-                            (errUpdateProgram) => {
-                              if (errUpdateProgram) {
-                                res.status(500).json({ success: false, error: errUpdateProgram });
-                              }
-                            },
-                          );
-                        }
-                        // Buat update course jika prereqnya finish (-1 -> 0)
-                        for (let i = 0; i < resultEnroll.courses.length; i += 1) {
-                          if (resultEnroll.courses[i].status_course === -1) {
-                            const sizeProgramLC = resultEnroll.program_id.list_course.length;
-                            for (let j = 0; j < sizeProgramLC; j += 1) {
-                              let courseIdLC = resultEnroll.program_id.list_course[j].course_id;
-                              courseIdLC = courseIdLC.toString();
-                              let courseIdEnrollCourse = resultEnroll.courses[i].course_id;
-                              courseIdEnrollCourse = courseIdEnrollCourse.toString();
-                              if (courseIdLC === courseIdEnrollCourse) {
-                                let finishedCourse = true;
-                                let k = 0;
-                                let sizePre = resultEnroll.program_id.list_course[j].prerequisite;
-                                sizePre = sizePre.length;
-                                if (sizePre !== null) {
-                                  while (k < sizePre) {
-                                    let idx;
-                                    idx = resultEnroll.program_id.list_course[j].prerequisite[k];
-                                    idx = idx.toString();
-                                    for (let l = 0; l < resultEnroll.courses.length; l += 1) {
-                                      if (resultEnroll.courses[l].course_id.toString() === idx) {
-                                        if (resultEnroll.courses[l].status_course !== 2) {
-                                          finishedCourse = false;
-                                        }
-                                      }
-                                    }
-                                    k += 1;
-                                  }
-                                }
-                                if (finishedCourse) {
-                                  db.EnrollProgram.findOneAndUpdate(
-                                    {
-                                      user_id: student.id,
-                                      program_id: programId,
-                                      'courses.course_id': resultEnroll.courses[i].course_id.toString(),
-                                    },
-                                    { $set: { 'courses.$.status_course': 0 } },
-                                    {
-                                      useFindAndModify: false,
-                                      new: true,
-                                    },
-                                    (errUpdateCourse) => {
-                                      if (errUpdateCourse) {
-                                        res.status(500).json({
-                                          success: false,
-                                          error: errUpdateCourse,
-                                        });
-                                      }
-                                    },
-                                  );
-                                }
-                              }
-                            }
-                          }
+                  if (programFinish) {
+                    db.EnrollProgram.findOneAndUpdate(
+                      {
+                        user_id: studentId,
+                        program_id: programId,
+                      },
+                      { $set: { status_program: 2 } },
+                      {
+                        useFindAndModify: false,
+                        new: true,
+                      },
+                      (errUpdateProgram) => {
+                        if (errUpdateProgram) {
+                          res.status(500).json({ success: false, error: errUpdateProgram });
                         }
                       },
                     );
-                }
-              },
-            );
-          },
-        );
-        res.status(200).json({ success: true, status_topic: 2 });
-      });
-    });
-  });
+                  }
+                  // Buat update course jika prereqnya finish (-1 -> 0)
+                  for (let i = 0; i < resultEnroll.courses.length; i += 1) {
+                    if (resultEnroll.courses[i].status_course === -1) {
+                      const sizeProgramLC = resultEnroll.program_id.list_course.length;
+                      for (let j = 0; j < sizeProgramLC; j += 1) {
+                        let courseIdLC = resultEnroll.program_id.list_course[j].course_id;
+                        courseIdLC = courseIdLC.toString();
+                        let courseIdEnrollCourse = resultEnroll.courses[i].course_id;
+                        courseIdEnrollCourse = courseIdEnrollCourse.toString();
+                        if (courseIdLC === courseIdEnrollCourse) {
+                          let finishedCourse = true;
+                          let k = 0;
+                          let sizePre = resultEnroll.program_id.list_course[j].prerequisite;
+                          sizePre = sizePre.length;
+                          if (sizePre !== null) {
+                            while (k < sizePre) {
+                              let idx;
+                              idx = resultEnroll.program_id.list_course[j].prerequisite[k];
+                              idx = idx.toString();
+                              for (let l = 0; l < resultEnroll.courses.length; l += 1) {
+                                if (resultEnroll.courses[l].course_id.toString() === idx) {
+                                  if (resultEnroll.courses[l].status_course !== 2) {
+                                    finishedCourse = false;
+                                  }
+                                }
+                              }
+                              k += 1;
+                            }
+                          }
+                          if (finishedCourse) {
+                            db.EnrollProgram.findOneAndUpdate(
+                              {
+                                user_id: studentId,
+                                program_id: programId,
+                                'courses.course_id': resultEnroll.courses[i].course_id.toString(),
+                              },
+                              { $set: { 'courses.$.status_course': 0 } },
+                              {
+                                useFindAndModify: false,
+                                new: true,
+                              },
+                              (errUpdateCourse) => {
+                                if (errUpdateCourse) {
+                                  res.status(500).json({
+                                    success: false,
+                                    error: errUpdateCourse,
+                                  });
+                                }
+                              },
+                            );
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+              );
+          }
+        },
+      );
+      res.status(200).json({ success: true, status_topic: 2 });
+    },
+  );
 });
 
 
