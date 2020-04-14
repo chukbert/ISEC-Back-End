@@ -321,6 +321,7 @@ router.patch('/setprereq/:id', auth, (req, res) => {
                   for (let i = 0; i < req.body.prerequisite.length; i += 1) {
                     db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
                       if (errCourseCode) return;
+                      if (!resultCode) return;
                       db.Program.findOneAndUpdate({ 
                         _id: resProgram.id,
                         'list_course.course_id': resCourse.id,
@@ -359,6 +360,7 @@ router.patch('/setprereq/:id', auth, (req, res) => {
               for (let i = 0; i < req.body.prerequisite.length; i += 1) {
                 db.Course.findOne({ code: req.body.prerequisite[i] }, (errCourseCode, resultCode) => {
                   if (errCourseCode) return;
+                  if (!resultCode) return;
                   db.Program.findOneAndUpdate({ 
                     _id: resProgram.id,
                     'list_course.course_id': resCourse.id,
