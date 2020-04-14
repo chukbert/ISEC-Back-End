@@ -37,7 +37,7 @@ services:
       SALTROUNDS: ${SALTROUNDS}
       WAIT_HOSTS: mongodb:27017
       WAIT_BEFORE_HOSTS: 10
-    command: sh -c "/wait && yarn initdb && yarn live"
+    entrypoint: sh -c "/wait && yarn initdb && yarn live"
     ports:
       - "5000:5000"
     volumes:
